@@ -1,0 +1,86 @@
+# Jenkins Configuration as Code for taubakul-zhanibek-student-api (Taubakul Zhanibek)
+# Loaded by the configuration-as-code plugin at every Jenkins start from the default
+# location $JENKINS_HOME/jenkins.yaml, which is a symlink to this file.
+# No secrets in this file: the admin password is read from a local file outside the
+# repository (chmod 600); the GitHub credential is added separately from
+# jenkins/credentials.template.yaml without writing the token to disk.
+
+jenkins:
+  systemMessage: "Jenkins of Taubakul Zhanibek — DevOps midterm"
+
+  # Built-in node (controller): runs the builds, has Docker access
+  numExecutors: 2
+  labelString: "docker"
+  mode: NORMAL
+
+  # Local user database with a single administrator, no self sign-up
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "zhanibek"
+          name: "Taubakul Zhanibek"
+          password: "${readFile:/Users/zhanibek/projects/jenkins-admin-password.txt}"
+
+  # Only logged-in users can do anything; anonymous users cannot even read
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  # Environment for every build: Homebrew tools and the Docker Desktop CLI
+  # (PATH+EXTRA is prepended to the existing PATH)
+  globalNodeProperties:
+    - envVars:
+        env:
+          - key: "PATH+EXTRA"
+            value: "/opt/homebrew/bin:/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin"
+
+unclassified:
+  location:
+    url: "http://127.0.0.1:8080/"
+
+# JDK used by the pipeline: tools { jdk 'jdk-21' }
+tool:
+  jdk:
+    installations:
+      - name: "jdk-21"
+        home: "/opt/homebrew/opt/openjdk@21"
+
+# Jobs are created with Job DSL
+jobs:
+  - script: |
+      multibranchPipelineJob('Taubakul_Zhanibek_Student_API') {
+        displayName('Taubakul_Zhanibek_Student_API')
+        description('CI pipeline of taubakul-zhanibek-student-api (Taubakul Zhanibek): build, test, Docker image, verify')
+        branchSources {
+          branchSource {
+            source {
+              git {
+                id('taubakul-zhanibek-student-api')
+                remote('https://github.com/D4rk26/taubakul-zhanibek-student-api.git')
+                credentialsId('github-token')
+                traits {
+                  // build every branch of the repository
+                  gitBranchDiscovery()
+                }
+              }
+            }
+          }
+        }
+        factory {
+          workflowBranchProjectFactory {
+            scriptPath('Jenkinsfile')
+          }
+        }
+        triggers {
+          // Polling: scan the repository for new branches and commits every 2 minutes
+          periodicFolderTrigger {
+            interval('2m')
+          }
+        }
+        orphanedItemStrategy {
+          discardOldItems {
+            numToKeep(20)
+          }
+        }
+      }
