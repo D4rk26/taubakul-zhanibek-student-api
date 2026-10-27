@@ -1,0 +1,24 @@
+# History rewrite — 2026-10-27 (Taubakul Zhanibek)
+
+Reason: evidence files docs/evidence/stage-2-app.txt, task-1.4.txt and task-2.4.txt contained
+local temporary paths and names of unrelated processes. They were replaced in every commit
+with their cleaned versions using git filter-repo (--file-info-callback). Nothing else changed:
+authors, dates, messages and the branch/merge structure are the same. The commit that only
+cleaned these files became empty and was dropped. Pushed once with --force-with-lease.
+A mirror backup of the old history was kept locally before the rewrite.
+
+Evidence files below quote commit hashes as they were printed at the time (old hashes).
+
+## Old -> new commit hashes
+```
+20bb221 -> (dropped, became empty)  
+22f8d06 -> 910575c  Mention author and DevOps toolchain in README description
+2d6c64a -> e7121bd  Document PUT endpoint and changelog in README
+6e5411b -> cf306fd  Merge branch 'feature/taubakul-zhanibek-documentation', resolve README description conflict
+737c22a -> 28c9f9a  Add Git workflow evidence
+765d258 -> 7ad0213  Initial commit: Taubakul Zhanibek Student API
+967e8c2 -> 4ccde2a  Merge branch 'feature/taubakul-zhanibek-crud': add student update (PUT)
+a7c4d6f -> 150800a  Add tests for student update endpoint
+ac106bc -> 2ff6d48  Clarify project description in README
+e4817ce -> 110b2bb  Add update operation to student service and controller
+```

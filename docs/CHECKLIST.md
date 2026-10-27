@@ -82,24 +82,24 @@ Legend: [x] done and verified, [ ] not done yet
 | `.gitignore` created | [x] build output, IDE, OS, `.env`/`*.env` (except `.env.example`), `*.log` (except Part 1 log) | `git check-ignore -v build/ .gradle/ .env ...` | [task-2.1](evidence/task-2.1.txt) |
 | Extra: `.gitattributes` (LF for `gradlew`, `*.sh`; CRLF for `*.bat`) | [x] | `git ls-files --eol` | [task-2.1](evidence/task-2.1.txt) |
 | Nothing unwanted staged | [x] | `git status --short`, check for build/.gradle/.env | [task-2.1](evidence/task-2.1.txt) |
-| First commit "Initial commit: Taubakul Zhanibek Student API" | [x] `765d258` | `git log` | [task-2.1](evidence/task-2.1.txt) |
+| First commit "Initial commit: Taubakul Zhanibek Student API" | [x] `7ad0213` | `git log` | [task-2.1](evidence/task-2.1.txt) |
 
 ### Task 2.2 — Branching and feature development
 | Requirement | Done | Verified by | Evidence |
 |---|---|---|---|
 | Branch `feature/taubakul-zhanibek-crud` | [x] | `git branch` | [task-2.2](evidence/task-2.2.txt) |
 | Implement one CRUD operation | [x] `PUT /api/students/{id}`: 200 / 404 / 400 / 409, own email allowed | 6 new tests (5 MockMvc + 1 unit) | [task-2.2](evidence/task-2.2.txt) |
-| README updated with name and description of the change | [x] PUT in endpoint table, "Changelog" section | `git diff` / commit `2d6c64a` | [task-2.2](evidence/task-2.2.txt) |
-| At least two meaningful commits | [x] 3 commits: `e4817ce`, `a7c4d6f`, `2d6c64a` | `git log main..feature/...` | [task-2.2](evidence/task-2.2.txt) |
-| Merge into main | [x] `git merge --no-ff` → merge commit `967e8c2` | graph; build on main → 22 tests, 0 failures | [task-2.2](evidence/task-2.2.txt) |
+| README updated with name and description of the change | [x] PUT in endpoint table, "Changelog" section | `git diff` / commit `e7121bd` | [task-2.2](evidence/task-2.2.txt) |
+| At least two meaningful commits | [x] 3 commits: `110b2bb`, `150800a`, `e7121bd` | `git log main..feature/...` | [task-2.2](evidence/task-2.2.txt) |
+| Merge into main | [x] `git merge --no-ff` → merge commit `4ccde2a` | graph; build on main → 22 tests, 0 failures | [task-2.2](evidence/task-2.2.txt) |
 
 ### Task 2.3 — Conflict resolution
 | Requirement | Done | Verified by | Evidence |
 |---|---|---|---|
 | Branch `feature/taubakul-zhanibek-documentation` | [x] from updated main | `git log --graph` | [task-2.3](evidence/task-2.3.txt) |
-| Same README line changed on two branches | [x] line 5 (description): `ac106bc` on branch, `22f8d06` on main | `git diff` per commit | [task-2.3](evidence/task-2.3.txt) |
+| Same README line changed on two branches | [x] line 5 (description): `2ff6d48` on branch, `910575c` on main | `git diff` per commit | [task-2.3](evidence/task-2.3.txt) |
 | Merge → conflict | [x] `CONFLICT (content): Merge conflict in README.md` | merge output, `git status`, markers | [task-2.3](evidence/task-2.3.txt) |
-| Conflict resolved manually and committed | [x] combined line, merge commit `6e5411b` | `grep` for markers → none | [task-2.3](evidence/task-2.3.txt) |
+| Conflict resolved manually and committed | [x] combined line, merge commit `cf306fd` | `grep` for markers → none | [task-2.3](evidence/task-2.3.txt) |
 | Final Git history shown | [x] | `git log --oneline --graph --decorate --all` | [task-2.3](evidence/task-2.3.txt) |
 
 ### Task 2.4 — Remote repository and version tags
@@ -108,7 +108,7 @@ Legend: [x] done and verified, [ ] not done yet
 | Personal GitHub repository `taubakul-zhanibek-student-api` | [x] public, description set | `gh repo view` | [task-2.4](evidence/task-2.4.txt) |
 | Push main and feature branches | [x] `git push -u origin` ×3 | `git ls-remote --heads origin`, `gh api .../branches` | [task-2.4](evidence/task-2.4.txt) |
 | Remote URL, commit history, branches shown | [x] | `git remote -v`, `git branch -a`, `gh api .../commits` | [task-2.4](evidence/task-2.4.txt) |
-| Commits linked to GitHub account D4rk26, no AI mentions | [x] all 8 commits `author.login=D4rk26` | `gh api`, `git log \| grep` → empty | [task-2.4](evidence/task-2.4.txt) |
+| Commits linked to GitHub account D4rk26, no AI mentions | [x] all commits `author.login=D4rk26` (re-checked after the history rewrite, see [history-rewrite](evidence/history-rewrite.txt)) | `gh api`, `git log \| grep` → empty | [task-2.4](evidence/task-2.4.txt) |
 | Tag `v1.0-taubakul-zhanibek` | [ ] **planned: stage 6** — the tag goes on the final commit so v1.0 includes Dockerfile, Compose and Jenkinsfile and matches the Docker image tag | — | — |
 | Explain why `.env`, passwords, DB credentials must not be committed | [x] | written explanation | [task-2.4](evidence/task-2.4.txt) |
 
