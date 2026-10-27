@@ -4,6 +4,30 @@ Author: Taubakul Zhanibek
 
 Student API by Taubakul Zhanibek — a REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL; DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
 
+## Project structure
+
+```
+taubakul-zhanibek-student-api/
+├── src/main/java/kz/taubakul/studentapi/   Spring Boot application (entity, repository, service, controller, dto, exception, config)
+├── src/test/                               tests: MockMvc integration tests (H2) and service unit tests
+├── scripts/
+│   ├── Taubakul_Zhanibek_system_report.sh  Part 1: system monitoring script (macOS and Linux)
+│   └── api_test.sh                         Part 3: end-to-end API test (curl)
+├── logs/                                   Part 1: system report log and log analysis
+├── backups/                                Part 1: README backup
+├── Dockerfile, .dockerignore               Part 3: multi-stage image (JDK build -> JRE runtime)
+├── docker-compose.yml, .env.example        Part 3: app + PostgreSQL 16 (copy .env.example to .env)
+├── Jenkinsfile                             Part 4: declarative CI pipeline
+├── jenkins/                                Part 4: Jenkins configuration as code (plugins, JCasC, credential template)
+├── build.gradle, settings.gradle, gradlew  Gradle build with the wrapper
+└── docs/
+    ├── CHECKLIST.md                        every task requirement -> what was done -> evidence -> how to show it
+    ├── evidence/                           command outputs for every task (task-1.1.txt ... task-4.4.txt)
+    └── postman/                            Postman collection for the API
+```
+
+All midterm tasks with their evidence are listed in [docs/CHECKLIST.md](docs/CHECKLIST.md).
+
 ## Tech stack
 
 - Java 21 (Gradle toolchain)
@@ -150,6 +174,8 @@ Validation errors (400) also contain `errors` with a message per field; a duplic
 - Docker: multi-stage Dockerfile, Docker Compose with PostgreSQL 16 (health check, named volume,
   dedicated network), API test script `scripts/api_test.sh` and a Postman collection.
 - Version bumped to 1.0.1 (shown by `GET /api/info`).
+- Jenkins CI: declarative `Jenkinsfile` (Checkout, Build, Test, Docker Build, Verify), Jenkins
+  configured as code in `jenkins/`, multibranch job `Taubakul_Zhanibek_Student_API` with polling.
 
 ### 1.0.0 — Taubakul Zhanibek
 - Added `PUT /api/students/{id}` (update a student, branch `feature/taubakul-zhanibek-crud`):

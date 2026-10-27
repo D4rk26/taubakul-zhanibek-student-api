@@ -1,0 +1,85 @@
+# Final audit before tag v1.0-taubakul-zhanibek (Taubakul Zhanibek)
+
+## Jenkins cleanup: wizard admin user removed, initialAdminPassword deleted, restart
+$ echo 'println "users: " + jenkins.model.Jenkins.get().securityRealm.allUsers*.id' | ~/projects/jenkins-tools/jcli groovy =
+users: [zhanibek]
+
+$ ls ~/.jenkins/secrets/initialAdminPassword 2>&1
+ls: /Users/zhanibek/.jenkins/secrets/initialAdminPassword: No such file or directory
+
+$ echo 'println "JVM uptime: " + (java.lang.management.ManagementFactory.runtimeMXBean.uptime/1000) + " s, install state: " + jenkins.model.Jenkins.get().installState; println "SEVERE or JCasC warnings since start: " + jenkins.model.Jenkins.logRecords.count { it.level.intValue() >= java.util.logging.Level.SEVERE.intValue() || (it.loggerName?.contains("casc") && it.level.intValue() >= java.util.logging.Level.WARNING.intValue()) }' | ~/projects/jenkins-tools/jcli groovy =
+JVM uptime: 50.211 s, install state: InstallState (RESTART)
+SEVERE or JCasC warnings since start: 0
+
+$ ~/projects/jenkins-tools/jcli who-am-i | head -1
+Authenticated as: zhanibek
+
+## Clean clone: the repository is self-contained
+$ git clone https://github.com/D4rk26/taubakul-zhanibek-student-api.git && cd taubakul-zhanibek-student-api
+
+$ git log --oneline -1
+fdab13f Add Jenkins evidence and update checklist
+
+$ git ls-files -s gradlew scripts/*.sh jenkins/*
+100755 249efbb032ce46a80c687c0723eb172e85f6a136 0	gradlew
+100644 9ccf22288632c623f2264367d0171e8d5e5c31c1 0	jenkins/casc.yaml
+100644 263ef50252afde48db006ba91018170cdb823786 0	jenkins/credentials.template.yaml
+100644 40c737af9e2fd04a52a622dc4ab23fb50ae09e12 0	jenkins/plugins.txt
+100755 605d19ab37a26417719dcb1dad8b604bb1db295e 0	scripts/Taubakul_Zhanibek_system_report.sh
+100755 338d45e7de50dc97caf2caaf4150b56258035d47 0	scripts/api_test.sh
+
+$ git ls-files | wc -l
+      60
+
+$ ls -a | grep -E "^\.env"
+.env.example
+
+$ JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew clean build --no-daemon
+BUILD SUCCESSFUL in 5s
+
+$ grep -h -o "tests=\"[0-9]*\" skipped=\"[0-9]*\" failures=\"[0-9]*\"" build/test-results/test/*.xml
+tests="17" skipped="0" failures="0"
+tests="4" skipped="0" failures="0"
+tests="1" skipped="0" failures="0"
+
+$ ls build/libs
+taubakul-zhanibek-student-api-1.0.1.jar
+
+$ cp .env.example .env && docker compose config --quiet && echo "compose config valid"
+compose config valid
+
+$ docker compose config --services
+db
+app
+
+$ bash -n scripts/*.sh && echo "scripts: syntax ok"
+scripts: syntax ok
+
+(temporary clone removed)
+
+## Secrets: search the whole history (git log --all -p) for the real secret values
+(values are read from the secret files inside the command and never printed)
+
+$ for name in jenkins-admin-password jenkins-api-token db-password github-token; do
+  case $name in
+    jenkins-admin-password) v=$(cat ~/projects/jenkins-admin-password.txt) ;;
+    jenkins-api-token)      v=$(cut -d: -f2 ~/projects/jenkins-api-token.txt) ;;
+    db-password)            v=$(grep "^DB_PASSWORD=" .env | cut -d= -f2-) ;;
+    github-token)           v=$(gh auth token) ;;
+  esac
+  [ ${#v} -ge 20 ] || { echo "$name: value not loaded"; continue; }
+  n=$(git log --all -p | grep -cF "$v"); m=$(grep -rlF "$v" . --exclude-dir=.git --exclude-dir=build --exclude-dir=.gradle --exclude=.env | wc -l | tr -d " ")
+  echo "$name: matches in history=$n, in working tree files=$m"
+done; unset v
+jenkins-admin-password: matches in history=0, in working tree files=0
+jenkins-api-token: matches in history=0, in working tree files=0
+db-password: matches in history=0, in working tree files=0
+github-token: matches in history=0, in working tree files=0
+
+$ git log --all -p | grep -ciE "cl[a]ude|anthr[o]pic" ; git grep -ciE "cl[a]ude|anthr[o]pic" HEAD -- . || echo "HEAD: no matches"
+0
+HEAD: no matches
+
+$ git log --all --format="%an <%ae>|%cn <%ce>" | sort | uniq -c
+  27 Taubakul Zhanibek <taubakulzhanibek@gmail.com>|Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+
