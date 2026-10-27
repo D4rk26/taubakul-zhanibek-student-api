@@ -242,7 +242,7 @@ class StudentControllerTest {
 		mockMvc.perform(get("/api/info"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.project").value("taubakul-zhanibek-student-api"))
-				.andExpect(jsonPath("$.author").value("Taubakul Zhanibek Nurlanuly"))
+				.andExpect(jsonPath("$.author").value("Zhanibek Taubakul"))
 				// version must be the one from build.gradle (via build-info.properties)
 				.andExpect(jsonPath("$.version").value(buildProperties.getVersion()));
 	}
