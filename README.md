@@ -58,7 +58,7 @@ Base URL: `http://localhost:<SERVER_PORT>`
 | GET | `/api/students` | List all students | 200 |
 | GET | `/api/students/{id}` | Get one student | 200, 404 |
 | POST | `/api/students` | Create a student | 201 + `Location`, 400, 409 |
-| PUT | `/api/students/{id}` | Update a student — **planned** | — |
+| PUT | `/api/students/{id}` | Update a student | 200, 400, 404, 409 |
 | DELETE | `/api/students/{id}` | Delete a student | 204, 404 |
 | GET | `/actuator/health` | Health check | 200 |
 | GET | `/actuator/info` | Application info | 200 |
@@ -90,3 +90,12 @@ Errors use one JSON format:
 ```
 
 Validation errors (400) also contain `errors` with a message per field; a duplicate email returns 409.
+
+## Changelog
+
+### 1.0.0 — Taubakul Zhanibek
+- Added `PUT /api/students/{id}` (update a student, branch `feature/taubakul-zhanibek-crud`):
+  returns 200 with the updated student, 404 if the student does not exist,
+  400 for invalid data and 409 if the new email already belongs to another student
+  (a student may keep their own email).
+- Initial version: create, list, get by id and delete students; `/api/info`; seed data.
