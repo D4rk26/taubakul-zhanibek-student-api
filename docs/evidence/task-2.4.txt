@@ -68,10 +68,10 @@ a7c4d6f Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zha
 e4817ce Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
 765d258 Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
 
-$ git log --all --format='%an <%ae>%n%B' | grep -iE 'co-authored|cl[a]ude|anthr[o]pic|generated' || echo 'no Co-Authored-By / AI mentions in any commit'
-no Co-Authored-By / AI mentions in any commit
+$ git log --all --format='%an <%ae>%n%B' | grep -iE 'co-authored|cl[a]ude|anthr[o]pic|generated' || echo 'no Co-Authored-By / generated-by trailers in any commit'
+no Co-Authored-By / generated-by trailers in any commit
 
-$ git grep -n -iE 'co-authored|cl[a]ude|anthr[o]pic|generated with' $(git rev-list --all) -- . ':!docs/evidence' | head || echo 'no AI mentions in tracked files of any commit'
+$ git grep -n -iE 'co-authored|cl[a]ude|anthr[o]pic|generated with' $(git rev-list --all) -- . ':!docs/evidence' | head || echo 'no generated-by mentions in tracked files of any commit'
 
 $ gh repo edit D4rk26/taubakul-zhanibek-student-api --description "Student CRUD API (Spring Boot, PostgreSQL) — DevOps midterm, Taubakul Zhanibek"
 

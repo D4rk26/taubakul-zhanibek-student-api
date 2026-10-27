@@ -108,7 +108,7 @@ Legend: [x] done and verified, [ ] not done yet
 | Personal GitHub repository `taubakul-zhanibek-student-api` | [x] public, description set | `gh repo view` | [task-2.4](evidence/task-2.4.txt) |
 | Push main and feature branches | [x] `git push -u origin` ×3 | `git ls-remote --heads origin`, `gh api .../branches` | [task-2.4](evidence/task-2.4.txt) |
 | Remote URL, commit history, branches shown | [x] | `git remote -v`, `git branch -a`, `gh api .../commits` | [task-2.4](evidence/task-2.4.txt) |
-| Commits linked to GitHub account D4rk26, no AI mentions | [x] all commits `author.login=D4rk26` (re-checked after the history rewrite, see [history-rewrite](evidence/history-rewrite.txt)) | `gh api`, `git log \| grep` → empty | [task-2.4](evidence/task-2.4.txt) |
+| Commits linked to GitHub account D4rk26, no co-author / generated-by trailers | [x] all commits `author.login=D4rk26` (re-checked after the history rewrite, see [history-rewrite](evidence/history-rewrite.txt)) | `gh api`, `git log \| grep` → empty | [task-2.4](evidence/task-2.4.txt) |
 | Tag `v1.0-taubakul-zhanibek` | [ ] **planned: stage 6** — the tag goes on the final commit so v1.0 includes Dockerfile, Compose and Jenkinsfile and matches the Docker image tag | — | — |
 | Explain why `.env`, passwords, DB credentials must not be committed | [x] | written explanation | [task-2.4](evidence/task-2.4.txt) |
 
