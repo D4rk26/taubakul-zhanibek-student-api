@@ -30,9 +30,11 @@ pipeline {
             steps {
                 script {
                     currentBuild.displayName = "#${env.BUILD_NUMBER} Taubakul Zhanibek"
+                    // Get the source code of this branch from GitHub;
+                    // checkout returns the Git variables (commit, branch)
+                    def scmVars = checkout scm
+                    env.GIT_COMMIT = scmVars.GIT_COMMIT
                 }
-                // Get the source code of this branch from GitHub
-                checkout scm
                 echo "Pipeline of ${env.STUDENT_NAME}: branch ${env.BRANCH_NAME}, commit ${env.GIT_COMMIT}"
                 sh 'git log -1 --oneline'
             }
