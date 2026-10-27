@@ -1,0 +1,31 @@
+# Only gradlew, gradle/, build.gradle, settings.gradle and src/ are needed to build the image.
+
+# Build output and caches (the image builds its own)
+build/
+.gradle/
+out/
+
+# Git and IDE files
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Secrets: never send them into the build context
+.env
+*.env
+
+# Project files not needed in the image
+logs/
+backups/
+docs/
+scripts/
+*.md
+*.log
+Dockerfile
+.dockerignore
+docker-compose.yml
+Jenkinsfile
