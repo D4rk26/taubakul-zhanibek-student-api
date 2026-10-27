@@ -1,0 +1,232 @@
+# Task 3.2 — Docker Compose and PostgreSQL (Taubakul Zhanibek)
+
+$ cat docker-compose.yml
+# Docker Compose for taubakul-zhanibek-student-api (author: Taubakul Zhanibek)
+# Usage: cp .env.example .env  (set real values)  ->  docker compose up -d --build
+# Values like ${DB_PASSWORD} are read from the .env file next to this file.
+
+# Compose project name: prefix for the project's resources
+name: taubakul-zhanibek-student-api
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    container_name: taubakul-zhanibek-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is not set in .env}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is not set in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
+    volumes:
+      # Named volume: data survives "docker compose down" and container re-creation
+      - taubakul-zhanibek-pgdata:/var/lib/postgresql/data
+    # The port is NOT published to the host: only containers in the network can reach the DB
+    healthcheck:
+      # "healthy" only when PostgreSQL accepts connections to our database
+      # ($$ = literal $, so the variables are expanded inside the container)
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - taubakul-zhanibek-net
+
+  # Spring Boot application
+  app:
+    build: .
+    image: taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek
+    container_name: taubakul-zhanibek-app
+    environment:
+      # "db" is the service name above; Docker DNS resolves it to the database container.
+      # "localhost" would point to the app container itself.
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      # host 8081 -> container 8080 (8080 on the host is used by Jenkins)
+      - "8081:8080"
+    depends_on:
+      # Start the app only after the database health check passes
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - taubakul-zhanibek-net
+
+networks:
+  # Dedicated bridge network for this project
+  taubakul-zhanibek-net:
+    name: taubakul-zhanibek-net
+    driver: bridge
+
+volumes:
+  # Persistent PostgreSQL data
+  taubakul-zhanibek-pgdata:
+    name: taubakul-zhanibek-pgdata
+
+$ cat .env.example
+# Copy to .env and set real values. Never commit .env.
+#   cp .env.example .env
+# Generate a password, e.g.: openssl rand -hex 24
+
+# Database (used by docker compose for PostgreSQL and the app)
+DB_NAME=studentdb
+DB_USERNAME=change_me
+DB_PASSWORD=change_me
+
+# Only for running the app outside Docker (./gradlew bootRun / java -jar);
+# in Docker Compose DB_HOST is "db" and DB_PORT is 5432 (set in docker-compose.yml)
+DB_HOST=localhost
+DB_PORT=5432
+SERVER_PORT=8081
+
+$ ls -l .env && git check-ignore -v .env && sed -E "s/^(DB_PASSWORD=).*/\1********/" .env
+-rw-------  1 zhanibek  staff  175 27 окт.  22:48 .env
+.gitignore:16:*.env	.env
+# Local secrets for docker compose — NOT committed (.gitignore)
+DB_NAME=studentdb
+DB_USERNAME=taubakul_zhanibek
+DB_PASSWORD=********
+
+$ docker compose config --quiet && echo "docker-compose.yml is valid"
+docker-compose.yml is valid
+
+$ docker compose config --no-interpolate | sed -n "1,200p"
+name: taubakul-zhanibek-student-api
+networks:
+  taubakul-zhanibek-net:
+    driver: bridge
+    name: taubakul-zhanibek-net
+services:
+  app:
+    build:
+      context: /Users/zhanibek/projects/taubakul-zhanibek-student-api
+      dockerfile: Dockerfile
+    container_name: taubakul-zhanibek-app
+    depends_on:
+      db:
+        condition: service_healthy
+        required: true
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME}
+    image: taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek
+    networks:
+      taubakul-zhanibek-net: null
+    ports:
+      - mode: ingress
+        protocol: tcp
+        published: "8081"
+        target: 8080
+    restart: unless-stopped
+  db:
+    container_name: taubakul-zhanibek-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is not set in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is not set in .env}
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 10s
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      timeout: 5s
+    image: postgres:16-alpine
+    networks:
+      taubakul-zhanibek-net: null
+    restart: unless-stopped
+    volumes:
+      - source: taubakul-zhanibek-pgdata
+        target: /var/lib/postgresql/data
+        type: volume
+        volume: {}
+volumes:
+  taubakul-zhanibek-pgdata:
+    name: taubakul-zhanibek-pgdata
+
+$ docker compose up -d --build 2>&1 | grep -v "^#" | grep -vE "^ *$"
+(297 image-layer download progress lines omitted)
+ Image postgres:16-alpine Pulling 
+ Image postgres:16-alpine Pulled 
+ Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek Building 
+ Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek Built 
+ Network taubakul-zhanibek-net Creating 
+ Volume taubakul-zhanibek-pgdata Creating 
+ Network taubakul-zhanibek-net Creating 
+ Volume taubakul-zhanibek-pgdata Created 
+ Network taubakul-zhanibek-net Created 
+ Container taubakul-zhanibek-postgres Creating 
+ Container taubakul-zhanibek-postgres Created 
+ Container taubakul-zhanibek-app Creating 
+ Container taubakul-zhanibek-app Created 
+ Container taubakul-zhanibek-postgres Starting 
+ Container taubakul-zhanibek-postgres Started 
+ Container taubakul-zhanibek-postgres Waiting 
+ Container taubakul-zhanibek-postgres Healthy 
+ Container taubakul-zhanibek-app Starting 
+ Container taubakul-zhanibek-app Started 
+
+$ docker compose ps --format "table {{.Name}}\t{{.Image}}\t{{.Service}}\t{{.Status}}\t{{.Ports}}"
+NAME                         IMAGE                                                  SERVICE   STATUS                   PORTS
+taubakul-zhanibek-app        taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek   app       Up 4 seconds             0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp
+taubakul-zhanibek-postgres   postgres:16-alpine                                     db        Up 9 seconds (healthy)   5432/tcp
+
+$ docker inspect taubakul-zhanibek-postgres --format "health: {{.State.Health.Status}}, last check: {{(index .State.Health.Log 0).Output}}"
+health: healthy, last check: /var/run/postgresql:5432 - accepting connections
+
+
+$ docker compose logs app 2>&1 | grep -E "Database JDBC URL|jdbc:postgresql|HikariPool-1 - (Start|Added)|Tomcat started|Started Taubakul|Seeded" | sed -E "s/^taubakul-zhanibek-app *\| //; s/^.{0,40}(INFO|WARN)/\1/" | cut -c1-170
+INFO 1 --- [taubakul-zhanibek-student-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+INFO 1 --- [taubakul-zhanibek-student-api] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@5
+INFO 1 --- [taubakul-zhanibek-student-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+	Database JDBC URL [jdbc:postgresql://db:5432/studentdb]
+INFO 1 --- [taubakul-zhanibek-student-api] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+INFO 1 --- [taubakul-zhanibek-student-api] [           main] .s.TaubakulZhanibekStudentApiApplication : Started TaubakulZhanibekStudentApiApplication in 1.869 seconds (pr
+INFO 1 --- [taubakul-zhanibek-student-api] [           main] k.t.studentapi.config.DataInitializer    : Seeded 3 students (author: Taubakul Zhanibek)
+
+$ docker compose exec app getent hosts db
+172.18.0.2      db
+
+$ docker compose exec app getent hosts localhost
+::1             localhost ip6-localhost ip6-loopback
+
+$ docker network inspect taubakul-zhanibek-net --format "{{range .Containers}}{{.Name}} -> {{.IPv4Address}}{{println}}{{end}}"
+taubakul-zhanibek-app -> 172.18.0.3/16
+taubakul-zhanibek-postgres -> 172.18.0.2/16
+
+
+$ docker compose exec app sh -c "printenv DB_HOST DB_PORT DB_NAME"
+db
+5432
+studentdb
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/info
+{"project":"taubakul-zhanibek-student-api","author":"Taubakul Zhanibek Nurlanuly","version":"1.0.0"}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/actuator/health
+{"groups":["liveness","readiness"],"status":"UP"}
+HTTP 200
+
+$ lsof -nP -iTCP:5432 -sTCP:LISTEN || echo "port 5432 is not published on the host (DB is reachable only inside taubakul-zhanibek-net)"
+port 5432 is not published on the host (DB is reachable only inside taubakul-zhanibek-net)
+
+## Why DB_HOST=db and not localhost
+Every container has its own network namespace. Inside taubakul-zhanibek-app, "localhost" (::1 /
+127.0.0.1, see `getent hosts localhost`) is the app container itself — PostgreSQL does not run there,
+so jdbc:postgresql://localhost:5432 would fail with "Connection refused".
+Docker Compose puts both services into the network taubakul-zhanibek-net and its built-in DNS
+resolves the service name "db" to the database container (172.18.0.2). The application log confirms
+the connection: Database JDBC URL [jdbc:postgresql://db:5432/studentdb].
+The database port is not published to the host — only containers in the same network can reach it.
+Secrets: `docker compose config` was only validated (--quiet) and printed with --no-interpolate, so the
+evidence shows ${DB_PASSWORD} placeholders, not the real value; .env is mode 600 and git-ignored.

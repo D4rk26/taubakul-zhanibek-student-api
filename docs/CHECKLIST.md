@@ -113,10 +113,54 @@ Legend: [x] done and verified, [ ] not done yet
 | Explain why `.env`, passwords, DB credentials must not be committed | [x] | written explanation | [task-2.4](evidence/task-2.4.txt) |
 
 ## Part 3 — Docker and Docker Compose
-- [ ] 3.1 Dockerfile
-- [ ] 3.2 Docker Compose and PostgreSQL
-- [ ] 3.3 Container management
-- [ ] 3.4 Individual API testing
+Work done in branch `feature/taubakul-zhanibek-docker`, merged into main with `--no-ff`.
+
+### Task 3.1 — Dockerfile
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Multi-stage Dockerfile | [x] `build` (eclipse-temurin:21-jdk) → runtime (eclipse-temurin:21-jre) | `cat Dockerfile`, build log | [task-3.1](evidence/task-3.1.txt) |
+| Official JDK image for the build stage, build with Gradle | [x] `./gradlew dependencies` (layer cache) then `./gradlew bootJar --no-daemon`; tests run in Jenkins | build log, 2nd build → all CACHED | [task-3.1](evidence/task-3.1.txt) |
+| Java runtime image for the final stage, copy the jar | [x] JRE only, `COPY --from=build ... app.jar`, non-root user `app` | `docker run ... which javac` → none | [task-3.1](evidence/task-3.1.txt) |
+| Expose the configured port | [x] `EXPOSE 8080`, exec-form `ENTRYPOINT` | `docker image inspect` | [task-3.1](evidence/task-3.1.txt) |
+| Individual image name and tag | [x] `taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek`, LABEL author | `docker images`, labels | [task-3.1](evidence/task-3.1.txt) |
+| Image size and creation details | [x] 553 MB (vs 1321 MB single-stage build stage), linux/arm64 | `docker images`, `inspect`, `history` | [task-3.1](evidence/task-3.1.txt) |
+| Extra: `.dockerignore` (no .env, .git, build/, docs/ in the context) | [x] | `cat .dockerignore` | [task-3.1](evidence/task-3.1.txt) |
+
+### Task 3.2 — Docker Compose and PostgreSQL
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Spring Boot app service | [x] `app`: build + image tag, `8081:8080`, `restart: unless-stopped` | `docker compose ps` | [task-3.2](evidence/task-3.2.txt) |
+| PostgreSQL service | [x] `db`: postgres:16-alpine, port not published | `docker compose ps`, `lsof :5432` → free | [task-3.2](evidence/task-3.2.txt) |
+| Environment variables for DB config | [x] from `.env` (git-ignored, mode 600, generated password); `.env.example` with placeholders | `git check-ignore`, masked `.env` | [task-3.2](evidence/task-3.2.txt) |
+| Persistent named volume | [x] `taubakul-zhanibek-pgdata` | `docker volume ls/inspect` | [task-3.2](evidence/task-3.2.txt), [task-3.3](evidence/task-3.3.txt) |
+| Dedicated network | [x] `taubakul-zhanibek-net` (bridge) | `docker network inspect` | [task-3.2](evidence/task-3.2.txt) |
+| Health check for PostgreSQL | [x] `pg_isready`, app `depends_on: service_healthy` | `(healthy)`, compose waits for Healthy | [task-3.2](evidence/task-3.2.txt) |
+| Personalized Compose project name | [x] `name: taubakul-zhanibek-student-api` | `docker volume inspect` labels | [task-3.3](evidence/task-3.3.txt) |
+| Both containers running | [x] | `docker compose ps` | [task-3.2](evidence/task-3.2.txt) |
+| App connects via service name, not localhost | [x] `DB_HOST=db` | log `jdbc:postgresql://db:5432/studentdb`, `getent hosts db` | [task-3.2](evidence/task-3.2.txt) |
+
+### Task 3.3 — Container management
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| List running containers | [x] | `docker ps`, `docker compose ps` | [task-3.3](evidence/task-3.3.txt) |
+| Application container logs | [x] | `docker compose logs app --tail 15` | [task-3.3](evidence/task-3.3.txt) |
+| Inspect container configuration | [x] image, state, ports, network/IP, mounts, env (password masked) | `docker inspect --format` | [task-3.3](evidence/task-3.3.txt) |
+| Execute a command inside the app container | [x] `whoami` → app, `java -version`, `ls -l /app`, `curl` to the app | `docker compose exec app ...` | [task-3.3](evidence/task-3.3.txt) |
+| Stop and restart the app service | [x] stop → Exited (143), API down → start/restart → API 200 | `docker compose stop/start/restart` | [task-3.3](evidence/task-3.3.txt) |
+| Rebuild after changing the app version | [x] 1.0.0 → 1.0.1 (commit "Bump application version to 1.0.1") | new Image ID + Created, `/api/info` → 1.0.1 | [task-3.3](evidence/task-3.3.txt) |
+| PostgreSQL records persist after restarting services | [x] `down` (no `-v`) → `up -d` | API + `psql` → record still there, "seeding skipped" | [task-3.3](evidence/task-3.3.txt) |
+
+### Task 3.4 — Individual API testing
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Create a student with my name | [x] 201 | `scripts/api_test.sh` | [task-3.4](evidence/task-3.4.txt) |
+| Retrieve all students | [x] 200 | script | [task-3.4](evidence/task-3.4.txt) |
+| Retrieve one student by id | [x] 200 | script | [task-3.4](evidence/task-3.4.txt) |
+| Update a student | [x] 200 (PUT) | script | [task-3.4](evidence/task-3.4.txt) |
+| Delete a student | [x] 204 | script | [task-3.4](evidence/task-3.4.txt) |
+| Nonexistent student | [x] 404 with JSON error | script | [task-3.4](evidence/task-3.4.txt) |
+| Personalized URL, evidence of successful responses | [x] `http://localhost:8081`, 6/6 PASS, exit 0 (exit 1 on failure) | script output | [task-3.4](evidence/task-3.4.txt) |
+| Postman collection | [x] `docs/postman/Taubakul_Zhanibek_Student_API.postman_collection.json` (`baseUrl`, tests) | `jq` listing | [task-3.4](evidence/task-3.4.txt) |
 
 ## Part 4 — Jenkins CI/CD
 - [ ] 4.1 Jenkins setup

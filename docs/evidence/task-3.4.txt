@@ -1,0 +1,140 @@
+# Task 3.4 — Individual API testing (Taubakul Zhanibek)
+
+$ shellcheck scripts/api_test.sh && echo "shellcheck: no issues"
+shellcheck: no issues
+
+$ ls -l scripts/api_test.sh docs/postman/
+-rwxr-xr-x  1 zhanibek  staff  3393 27 окт.  22:53 scripts/api_test.sh
+
+docs/postman/:
+total 24
+-rw-r--r--  1 zhanibek  staff  9009 27 окт.  22:53 Taubakul_Zhanibek_Student_API.postman_collection.json
+
+$ ./scripts/api_test.sh http://localhost:8081; echo "exit code: $?"
+Student API test — Taubakul Zhanibek
+Base URL: http://localhost:8081
+------------------------------------------------------------
+1. Create a student
+POST http://localhost:8081/api/students
+HTTP 201 (expected 201)
+{
+  "id": 6,
+  "firstName": "Zhanibek",
+  "lastName": "Taubakul",
+  "email": "zhanibek.taubakul.1793123621@example.com",
+  "groupName": "DevOps-2026",
+  "course": 3
+}
+=> PASS
+Created student id: 6
+------------------------------------------------------------
+2. Get all students
+GET http://localhost:8081/api/students
+HTTP 200 (expected 200)
+[
+  {
+    "id": 1,
+    "firstName": "Zhanibek",
+    "lastName": "Taubakul",
+    "email": "taubakulzhanibek@gmail.com",
+    "groupName": "DevOps-2026",
+    "course": 3
+  },
+  {
+    "id": 2,
+    "firstName": "Aruzhan",
+    "lastName": "Serikova",
+    "email": "aruzhan.serikova@example.com",
+    "groupName": "DevOps-2026",
+    "course": 3
+  },
+  {
+    "id": 3,
+    "firstName": "Dias",
+    "lastName": "Nurlanov",
+    "email": "dias.nurlanov@example.com",
+    "groupName": "SE-2027",
+    "course": 2
+  },
+  {
+    "id": 4,
+    "firstName": "Zhanibek",
+    "lastName": "Taubakul",
+    "email": "zhanibek.persist@example.com",
+    "groupName": "DevOps-2026",
+    "course": 3
+  },
+  {
+    "id": 6,
+    "firstName": "Zhanibek",
+    "lastName": "Taubakul",
+    "email": "zhanibek.taubakul.1793123621@example.com",
+    "groupName": "DevOps-2026",
+    "course": 3
+  }
+]
+=> PASS
+------------------------------------------------------------
+3. Get the student by id
+GET http://localhost:8081/api/students/6
+HTTP 200 (expected 200)
+{
+  "id": 6,
+  "firstName": "Zhanibek",
+  "lastName": "Taubakul",
+  "email": "zhanibek.taubakul.1793123621@example.com",
+  "groupName": "DevOps-2026",
+  "course": 3
+}
+=> PASS
+------------------------------------------------------------
+4. Update the student (PUT)
+PUT http://localhost:8081/api/students/6
+HTTP 200 (expected 200)
+{
+  "id": 6,
+  "firstName": "Zhanibek",
+  "lastName": "Taubakul",
+  "email": "zhanibek.taubakul.1793123621@example.com",
+  "groupName": "DevOps-2027",
+  "course": 4
+}
+=> PASS
+------------------------------------------------------------
+5. Delete the student
+DELETE http://localhost:8081/api/students/6
+HTTP 204 (expected 204)
+(empty body)
+=> PASS
+------------------------------------------------------------
+6. Get the deleted (nonexistent) student
+GET http://localhost:8081/api/students/6
+HTTP 404 (expected 404)
+{
+  "timestamp": "2026-10-27T17:53:42.123573756Z",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Student with id 6 not found",
+  "path": "/api/students/6"
+}
+=> PASS
+============================================================
+Result: 6 passed, 0 failed
+ALL TESTS PASSED
+exit code: 0
+
+$ ./scripts/api_test.sh http://localhost:9 > /dev/null 2>&1; echo "unreachable URL -> exit code: $?"
+unreachable URL -> exit code: 1
+
+$ jq -r '.info.name, (.item[] | "  \(.request.method) \(.request.url.raw)"), "variables: \([.variable[].key] | join(", "))"' docs/postman/Taubakul_Zhanibek_Student_API.postman_collection.json
+Taubakul Zhanibek — Student API
+  GET {{baseUrl}}/api/info
+  POST {{baseUrl}}/api/students
+  GET {{baseUrl}}/api/students
+  GET {{baseUrl}}/api/students/{{studentId}}
+  PUT {{baseUrl}}/api/students/{{studentId}}
+  DELETE {{baseUrl}}/api/students/{{studentId}}
+  GET {{baseUrl}}/api/students/{{studentId}}
+  POST {{baseUrl}}/api/students
+variables: baseUrl, studentId, studentEmail
+
