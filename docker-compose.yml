@@ -1,0 +1,66 @@
+# Docker Compose for taubakul-zhanibek-student-api (author: Taubakul Zhanibek)
+# Usage: cp .env.example .env  (set real values)  ->  docker compose up -d --build
+# Values like ${DB_PASSWORD} are read from the .env file next to this file.
+
+# Compose project name: prefix for the project's resources
+name: taubakul-zhanibek-student-api
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:16-alpine
+    container_name: taubakul-zhanibek-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:?DB_NAME is not set in .env}
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is not set in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is not set in .env}
+    volumes:
+      # Named volume: data survives "docker compose down" and container re-creation
+      - taubakul-zhanibek-pgdata:/var/lib/postgresql/data
+    # The port is NOT published to the host: only containers in the network can reach the DB
+    healthcheck:
+      # "healthy" only when PostgreSQL accepts connections to our database
+      # ($$ = literal $, so the variables are expanded inside the container)
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - taubakul-zhanibek-net
+
+  # Spring Boot application
+  app:
+    build: .
+    image: taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek
+    container_name: taubakul-zhanibek-app
+    environment:
+      # "db" is the service name above; Docker DNS resolves it to the database container.
+      # "localhost" would point to the app container itself.
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      # host 8081 -> container 8080 (8080 on the host is used by Jenkins)
+      - "8081:8080"
+    depends_on:
+      # Start the app only after the database health check passes
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - taubakul-zhanibek-net
+
+networks:
+  # Dedicated bridge network for this project
+  taubakul-zhanibek-net:
+    name: taubakul-zhanibek-net
+    driver: bridge
+
+volumes:
+  # Persistent PostgreSQL data
+  taubakul-zhanibek-pgdata:
+    name: taubakul-zhanibek-pgdata
