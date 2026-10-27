@@ -1,0 +1,111 @@
+==================================================================
+ System report — run at 2026-10-27 21:55:05 +05
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  21:55:05 +05
+
+--- User ---
+Current user:  zhanibek
+Hostname:      MacBook-Air-Zhanibek.local
+
+--- Operating system and kernel ---
+OS:            macOS 27.0.1 (build 26A434)
+Kernel:        Darwin 27.0.0
+Architecture:  arm64
+
+--- CPU ---
+Model:         Apple M5
+CPU cores:     10
+
+--- Memory ---
+Total:         16384 MB
+Free:          543 MB
+Inactive:      4347 MB (can be reclaimed)
+
+--- Disk usage ---
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    13Gi    53Gi    20%    484k  553M    0%   /
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+
+==================================================================
+ System report — run at 2026-10-27 21:55:07 +05
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  21:55:07 +05
+
+--- User ---
+Current user:  zhanibek
+Hostname:      MacBook-Air-Zhanibek.local
+
+--- Operating system and kernel ---
+OS:            macOS 27.0.1 (build 26A434)
+Kernel:        Darwin 27.0.0
+Architecture:  arm64
+
+--- CPU ---
+Model:         Apple M5
+CPU cores:     10
+
+--- Memory ---
+Total:         16384 MB
+Free:          374 MB
+Inactive:      4236 MB (can be reclaimed)
+
+--- Disk usage ---
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    13Gi    53Gi    20%    484k  553M    0%   /
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+
+==================================================================
+ System report — run at 2026-10-27 21:55:22 +05
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  21:55:22 +05
+
+--- User ---
+Current user:  zhanibek
+Hostname:      MacBook-Air-Zhanibek.local
+
+--- Operating system and kernel ---
+OS:            macOS 27.0.1 (build 26A434)
+Kernel:        Darwin 27.0.0
+Architecture:  arm64
+
+--- CPU ---
+Model:         Apple M5
+CPU cores:     10
+
+--- Memory ---
+Total:         16384 MB
+Free:          336 MB
+Inactive:      4386 MB (can be reclaimed)
+
+--- Disk usage ---
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    13Gi    53Gi    20%    484k  553M    0%   /
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+

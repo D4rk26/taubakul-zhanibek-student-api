@@ -1,0 +1,86 @@
+# Task 1.4 — Process and log analysis (Taubakul Zhanibek)
+
+## Processes
+$ ps -ax -o user,pid,%cpu,%mem,command | head -10 | cut -c1-150
+USER               PID  %CPU %MEM COMMAND
+root                 1   0,0  0,1 /sbin/launchd
+root               342   0,0  0,1 /usr/libexec/logd
+root               343   0,0  0,0 /usr/libexec/centaurid
+root               344   0,0  0,0 /usr/libexec/smd
+root               345   0,0  0,1 /usr/libexec/UserEventAgent (System)
+root               347   0,0  0,0 /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/Support/fseven
+root               348   0,0  0,0 /System/Library/PrivateFrameworks/MediaRemote.framework/Support/mediaremoted
+root               352   0,0  0,0 /usr/sbin/systemstats --daemon
+root               356   0,0  0,0 /usr/libexec/configd
+(listing sorted by PID; re-captured on 2026-10-27 to keep the evidence short)
+
+$ ps aux | wc -l
+     801
+
+$ ps aux | grep -i '[j]ava' | cut -c1-250
+zhanibek           748   0,0  0,2 495555744  36912   ??  S    20окт.26   3:09.10 /opt/homebrew/opt/openjdk@21/bin/java -Dmail.smtp.starttls.enable=true -jar /opt/homebrew/opt/jenkins-lts/libexec/jenkins.war --httpListenAddress=127.0.0.1 --httpPort=80
+
+$ JPID=$(pgrep -f jenkins.war); echo "Jenkins PID: $JPID"; ps -o user,pid,ppid,%cpu,%mem,etime,command -p "$JPID" | cut -c1-220
+Jenkins PID: 748
+USER       PID  PPID  %CPU %MEM     ELAPSED COMMAND
+zhanibek   748     1   0,0  0,2 07-06:48:37 /opt/homebrew/opt/openjdk@21/bin/java -Dmail.smtp.starttls.enable=true -jar /opt/homebrew/opt/jenkins-lts/libexec/jenkins.war --httpListenAddress=127.0.0.1 --httpPort=8080
+
+$ lsof -nP -a -p "$(pgrep -f jenkins.war)" -iTCP -sTCP:LISTEN
+COMMAND PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+java    748 zhanibek    9u  IPv6 0x1c2345b895d87848      0t0  TCP 127.0.0.1:8080 (LISTEN)
+
+## Kill a process by PID (safe example; Jenkins is not touched)
+$ sleep 300 &
+SPID=$!
+echo "started sleep with PID $SPID"
+ps -p $SPID -o pid,stat,etime,command
+kill $SPID
+sleep 1
+ps -p $SPID -o pid,command || echo "PID $SPID no longer exists — process terminated"
+started sleep with PID 41929
+  PID STAT ELAPSED COMMAND
+41929 SN     00:00 sleep 300
+  PID COMMAND
+PID 41929 no longer exists — process terminated
+
+## Log analysis
+$ tail -n 5 logs/Taubakul_Zhanibek_system_report.log
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+
+
+$ grep -n 'Taubakul' logs/Taubakul_Zhanibek_system_report.log > logs/Taubakul_Zhanibek_log_analysis.txt
+
+$ cat logs/Taubakul_Zhanibek_log_analysis.txt
+6:Full name:     Taubakul Zhanibek Nurlanuly
+43:Full name:     Taubakul Zhanibek Nurlanuly
+80:Full name:     Taubakul Zhanibek Nurlanuly
+
+$ ls -l logs/Taubakul_Zhanibek_log_analysis.txt
+-rw-r--r--  1 zhanibek  staff  137 27 окт.  21:55 logs/Taubakul_Zhanibek_log_analysis.txt
+
+## > versus >>
+$ echo "first line" > /tmp/taubakul_redirect_demo.txt; cat /tmp/taubakul_redirect_demo.txt
+first line
+
+$ echo "second line (appended with >>)" >> /tmp/taubakul_redirect_demo.txt; cat /tmp/taubakul_redirect_demo.txt
+first line
+second line (appended with >>)
+
+$ echo "third line (overwrite with >)" > /tmp/taubakul_redirect_demo.txt; cat /tmp/taubakul_redirect_demo.txt
+third line (overwrite with >)
+
+$ rm /tmp/taubakul_redirect_demo.txt && ls /tmp/taubakul_redirect_demo.txt
+ls: /tmp/taubakul_redirect_demo.txt: No such file or directory
+
+## Explanation: > vs >>
+>  redirects output to a file and OVERWRITES it (the file is truncated or created first).
+>> redirects output to a file and APPENDS to the end (the file is created if missing).
+The system report script uses `tee -a` (the tee equivalent of >>) so every run is added to the log
+instead of replacing previous runs.
+
+## Java process found
+PID 748, user zhanibek, parent PID 1 (launchd): /opt/homebrew/opt/openjdk@21/bin/java -jar jenkins.war.
+This is the Jenkins LTS server started by `brew services`, listening on 127.0.0.1:8080.

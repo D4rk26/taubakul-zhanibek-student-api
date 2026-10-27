@@ -1,0 +1,208 @@
+# Task 1.2 — System monitoring script (Taubakul Zhanibek)
+
+$ shellcheck scripts/Taubakul_Zhanibek_system_report.sh && echo "shellcheck: no issues"
+shellcheck: no issues
+
+$ /bin/bash --version | head -1
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin26)
+
+$ bash scripts/Taubakul_Zhanibek_system_report.sh --help
+Usage: Taubakul_Zhanibek_system_report.sh [LOG_FILE]
+
+Collects system information and appends it to LOG_FILE.
+
+Arguments:
+  LOG_FILE     Path to the log file (default: logs/Taubakul_Zhanibek_system_report.log
+               in the project directory)
+  -h, --help   Show this help and exit
+
+$ bash scripts/Taubakul_Zhanibek_system_report.sh --bad-option; echo "exit code: $?"
+Usage: Taubakul_Zhanibek_system_report.sh [LOG_FILE]
+
+Collects system information and appends it to LOG_FILE.
+
+Arguments:
+  LOG_FILE     Path to the log file (default: logs/Taubakul_Zhanibek_system_report.log
+               in the project directory)
+  -h, --help   Show this help and exit
+ERROR: unknown option: --bad-option
+exit code: 1
+
+$ ls -l logs/Taubakul_Zhanibek_system_report.log
+-rw-r--r--  1 zhanibek  staff  0 27 окт.  21:55 logs/Taubakul_Zhanibek_system_report.log
+
+$ pwd
+/Users/zhanibek/projects/taubakul-zhanibek-student-api
+
+$ bash scripts/Taubakul_Zhanibek_system_report.sh
+==================================================================
+ System report — run at 2026-10-27 21:55:05 +05
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  21:55:05 +05
+
+--- User ---
+Current user:  zhanibek
+Hostname:      MacBook-Air-Zhanibek.local
+
+--- Operating system and kernel ---
+OS:            macOS 27.0.1 (build 26A434)
+Kernel:        Darwin 27.0.0
+Architecture:  arm64
+
+--- CPU ---
+Model:         Apple M5
+CPU cores:     10
+
+--- Memory ---
+Total:         16384 MB
+Free:          543 MB
+Inactive:      4347 MB (can be reclaimed)
+
+--- Disk usage ---
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    13Gi    53Gi    20%    484k  553M    0%   /
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+
+Report appended to: /Users/zhanibek/projects/taubakul-zhanibek-student-api/logs/Taubakul_Zhanibek_system_report.log
+
+$ cd ~ && pwd && bash ~/projects/taubakul-zhanibek-student-api/scripts/Taubakul_Zhanibek_system_report.sh > /dev/null && echo "second run from $PWD finished"; cd - > /dev/null
+/Users/zhanibek
+second run from /Users/zhanibek finished
+
+$ grep -n "System report — run at" logs/Taubakul_Zhanibek_system_report.log
+2: System report — run at 2026-10-27 21:55:05 +05
+39: System report — run at 2026-10-27 21:55:07 +05
+
+$ cat logs/Taubakul_Zhanibek_system_report.log
+==================================================================
+ System report — run at 2026-10-27 21:55:05 +05
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  21:55:05 +05
+
+--- User ---
+Current user:  zhanibek
+Hostname:      MacBook-Air-Zhanibek.local
+
+--- Operating system and kernel ---
+OS:            macOS 27.0.1 (build 26A434)
+Kernel:        Darwin 27.0.0
+Architecture:  arm64
+
+--- CPU ---
+Model:         Apple M5
+CPU cores:     10
+
+--- Memory ---
+Total:         16384 MB
+Free:          543 MB
+Inactive:      4347 MB (can be reclaimed)
+
+--- Disk usage ---
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    13Gi    53Gi    20%    484k  553M    0%   /
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+
+==================================================================
+ System report — run at 2026-10-27 21:55:07 +05
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  21:55:07 +05
+
+--- User ---
+Current user:  zhanibek
+Hostname:      MacBook-Air-Zhanibek.local
+
+--- Operating system and kernel ---
+OS:            macOS 27.0.1 (build 26A434)
+Kernel:        Darwin 27.0.0
+Architecture:  arm64
+
+--- CPU ---
+Model:         Apple M5
+CPU cores:     10
+
+--- Memory ---
+Total:         16384 MB
+Free:          374 MB
+Inactive:      4236 MB (can be reclaimed)
+
+--- Disk usage ---
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s1s1   460Gi    13Gi    53Gi    20%    484k  553M    0%   /
+/dev/disk3s5     460Gi   380Gi    53Gi    88%    1,6M  553M    0%   /System/Volumes/Data
+
+--- Available disk space ---
+Available on /: 53Gi (of 460Gi)
+
+
+# Linux check (Docker, ubuntu:24.04)
+
+$ docker run --rm -v "$PWD":/w -w /w ubuntu:24.04 bash -c "bash scripts/Taubakul_Zhanibek_system_report.sh /tmp/test.log > /dev/null && echo \"--- /tmp/test.log inside container:\" && cat /tmp/test.log"
+--- /tmp/test.log inside container:
+==================================================================
+ System report — run at 2026-10-27 16:55:12 UTC
+==================================================================
+
+--- Student ---
+Full name:     Taubakul Zhanibek Nurlanuly
+
+--- Date and time ---
+Current date:  2026-10-27
+Current time:  16:55:12 UTC
+
+--- User ---
+Current user:  root
+Hostname:      618cdbf5621e
+
+--- Operating system and kernel ---
+OS:            Ubuntu 24.04.5 LTS
+Kernel:        Linux 7.0.14-linuxkit
+Architecture:  aarch64
+
+--- CPU ---
+Architecture:                            aarch64
+CPU(s):                                  10
+Model name:                              -
+Thread(s) per core:                      1
+
+--- Memory ---
+               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       567Mi       6.9Gi       512Ki       404Mi       7.2Gi
+Swap:          1.0Gi          0B       1.0Gi
+
+--- Disk usage ---
+Filesystem      Size  Used Avail Use% Mounted on
+overlay         453G  1.5G  428G   1% /
+tmpfs            64M     0   64M   0% /dev
+shm              64M     0   64M   0% /dev/shm
+virtiofs0       461G  408G   53G  89% /w
+/dev/vda1       453G  1.5G  428G   1% /etc/hosts
+tmpfs           4.0K     0  4.0K   0% /proc/scsi
+
+--- Available disk space ---
+Available on /: 428G (of 453G)
+
+

@@ -1,0 +1,9 @@
+# Test profile: in-memory H2 database, no Docker or PostgreSQL needed
+spring:
+  datasource:
+    url: jdbc:h2:mem:studentdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop

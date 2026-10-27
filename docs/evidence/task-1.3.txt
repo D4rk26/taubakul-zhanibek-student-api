@@ -1,0 +1,51 @@
+# Task 1.3 — Permissions and backup (Taubakul Zhanibek)
+
+$ ls -l scripts/Taubakul_Zhanibek_system_report.sh
+-rw-r--r--  1 zhanibek  staff  5074 27 окт.  21:54 scripts/Taubakul_Zhanibek_system_report.sh
+
+$ chmod +x scripts/Taubakul_Zhanibek_system_report.sh
+
+$ ls -l scripts/Taubakul_Zhanibek_system_report.sh
+-rwxr-xr-x  1 zhanibek  staff  5074 27 окт.  21:54 scripts/Taubakul_Zhanibek_system_report.sh
+
+$ chmod 744 scripts/Taubakul_Zhanibek_system_report.sh
+
+$ ls -l scripts/Taubakul_Zhanibek_system_report.sh
+-rwxr--r--  1 zhanibek  staff  5074 27 окт.  21:54 scripts/Taubakul_Zhanibek_system_report.sh
+
+$ stat -f '%Sp %Lp %N' scripts/Taubakul_Zhanibek_system_report.sh
+-rwxr--r-- 744 scripts/Taubakul_Zhanibek_system_report.sh
+
+$ ./scripts/Taubakul_Zhanibek_system_report.sh > /dev/null && echo 'script runs directly as ./script: OK'
+script runs directly as ./script: OK
+
+$ cp README.md backups/README_Taubakul_Zhanibek_backup.md
+
+$ ls -l README.md backups/
+-rw-r--r--  1 zhanibek  staff  165 27 окт.  21:54 README.md
+
+backups/:
+total 8
+-rw-r--r--  1 zhanibek  staff  165 27 окт.  21:55 README_Taubakul_Zhanibek_backup.md
+
+$ cat backups/README_Taubakul_Zhanibek_backup.md
+# taubakul-zhanibek-student-api
+
+Author: Taubakul Zhanibek
+
+Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
+
+$ diff README.md backups/README_Taubakul_Zhanibek_backup.md && echo "diff: no differences"
+diff: no differences
+
+$ cmp README.md backups/README_Taubakul_Zhanibek_backup.md && echo "identical"
+identical
+
+$ shasum -a 256 README.md backups/README_Taubakul_Zhanibek_backup.md
+a5f04a8b9f8cc64d6b68ce72760ef92710c26980b99e2dccd079a9d5bf8921c3  README.md
+a5f04a8b9f8cc64d6b68ce72760ef92710c26980b99e2dccd079a9d5bf8921c3  backups/README_Taubakul_Zhanibek_backup.md
+
+## Why 744
+744 = owner rwx (4+2+1=7), group r-- (4), others r-- (4).
+The owner can read, edit and run the script; group members and others can only read it.
+755 would also give group/others execute (r-x), which the task does not ask for.

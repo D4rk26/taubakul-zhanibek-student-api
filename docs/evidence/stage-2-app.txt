@@ -1,0 +1,222 @@
+# Stage 2 — Spring Boot application (Taubakul Zhanibek)
+
+## Build and tests
+$ echo "JAVA_HOME=$JAVA_HOME"; ./gradlew --version | grep -E "^Gradle|Launcher JVM"
+JAVA_HOME=/opt/homebrew/opt/openjdk@21
+Gradle 9.8.2
+Launcher JVM:  21.0.12.1 (Homebrew 21.0.12.1)
+
+$ grep -E "org.springframework.boot. version|^version" build.gradle
+	id 'org.springframework.boot' version '4.1.2'
+version = '1.0.0'
+
+$ ./gradlew clean build --console=plain 2>&1 | grep -E "^> Task|PASSED|FAILED|SKIPPED|BUILD"
+> Task :clean
+> Task :compileJava
+> Task :bootBuildInfo
+> Task :processResources
+> Task :classes
+> Task :resolveMainClassName
+> Task :bootJar
+> Task :jar SKIPPED
+> Task :assemble
+> Task :compileTestJava
+> Task :processTestResources
+> Task :testClasses
+> Task :test
+TaubakulZhanibekStudentApiApplicationTests > contextLoads() PASSED
+StudentControllerTest > deleteStudentReturns204AndStudentIsGone() PASSED
+StudentControllerTest > createdLocationPointsToNewStudent() PASSED
+StudentControllerTest > duplicateEmailReturns409() PASSED
+StudentControllerTest > createStudentReturns201WithLocation() PASSED
+StudentControllerTest > nonNumericIdReturns400() PASSED
+StudentControllerTest > getMissingStudentReturns404WithJsonError() PASSED
+StudentControllerTest > infoContainsAuthorName() PASSED
+StudentControllerTest > deleteMissingStudentReturns404() PASSED
+StudentControllerTest > invalidStudentReturns400WithFieldErrors() PASSED
+StudentControllerTest > healthEndpointIsUp() PASSED
+StudentControllerTest > getAllStudentsReturnsSeededData() PASSED
+StudentControllerTest > getStudentById() PASSED
+StudentServiceTest > createTrimsFieldsAndLowercasesEmail() PASSED
+StudentServiceTest > findByIdThrowsWhenStudentDoesNotExist() PASSED
+StudentServiceTest > createRejectsDuplicateEmail() PASSED
+> Task :check
+> Task :build
+BUILD SUCCESSFUL in 3s
+
+$ python3 -I -c "
+import glob, xml.etree.ElementTree as ET
+t=f=e=s=0
+for p in glob.glob(\"build/test-results/test/*.xml\"):
+    r=ET.parse(p).getroot(); t+=int(r.get(\"tests\")); f+=int(r.get(\"failures\")); e+=int(r.get(\"errors\")); s+=int(r.get(\"skipped\"))
+    print(r.get(\"name\"), \"tests=\"+r.get(\"tests\"), \"failures=\"+r.get(\"failures\"))
+print(f\"TOTAL tests={t} failures={f} errors={e} skipped={s}\")
+"
+kz.taubakul.studentapi.service.StudentServiceTest tests=3 failures=0
+kz.taubakul.studentapi.TaubakulZhanibekStudentApiApplicationTests tests=1 failures=0
+kz.taubakul.studentapi.controller.StudentControllerTest tests=12 failures=0
+TOTAL tests=16 failures=0 errors=0 skipped=0
+
+$ ls -l build/libs/
+total 107696
+-rw-r--r--  1 zhanibek  staff  55137167 27 окт.  22:14 taubakul-zhanibek-student-api-1.0.0.jar
+
+$ unzip -p build/libs/taubakul-zhanibek-student-api-1.0.0.jar META-INF/build-info.properties
+build.artifact=taubakul-zhanibek-student-api
+build.group=kz.taubakul
+build.name=taubakul-zhanibek-student-api
+build.time=2026-10-27T17\:14\:01.342877Z
+build.version=1.0.0
+
+## Live check on PostgreSQL
+(DB_PASSWORD is generated with 'openssl rand' in the shell session and is not stored anywhere)
+
+$ docker run -d --name tz-postgres-tmp -e POSTGRES_DB=$DB_NAME -e POSTGRES_USER=$DB_USERNAME -e POSTGRES_PASSWORD=$DB_PASSWORD -p 5432:5432 postgres:16 >/dev/null && docker ps --filter name=tz-postgres-tmp --format "{{.Names}}  {{.Image}}  {{.Status}}  {{.Ports}}"
+tz-postgres-tmp  postgres:16  Up Less than a second  0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+
+$ docker exec tz-postgres-tmp pg_isready -U $DB_USERNAME -d $DB_NAME
+/var/run/postgresql:5432 - accepting connections
+
+$ SERVER_PORT=8081 java -jar build/libs/taubakul-zhanibek-student-api-1.0.0.jar &   # DB_* exported in the session
+app started, PID 42517
+$ grep -E "Started TaubakulZhanibek|Seeded|seeding skipped|Tomcat started|PostgreSQL" $APP_LOG | sed -E "s/^.{0,40}(INFO|WARN)/\1/" | cut -c1-200
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+INFO 42517 --- [taubakul-zhanibek-student-api] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8081 (http) with context path '/'
+INFO 42517 --- [taubakul-zhanibek-student-api] [           main] .s.TaubakulZhanibekStudentApiApplication : Started TaubakulZhanibekStudentApiApplication in 1.51 seconds (process running for 1.68)
+INFO 42517 --- [taubakul-zhanibek-student-api] [           main] k.t.studentapi.config.DataInitializer    : Seeded 3 students (author: Taubakul Zhanibek)
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/info
+{"project":"taubakul-zhanibek-student-api","author":"Taubakul Zhanibek Nurlanuly","version":"1.0.0"}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/actuator/health
+{"groups":["liveness","readiness"],"status":"UP"}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/students
+[{"id":1,"firstName":"Zhanibek","lastName":"Taubakul","email":"taubakulzhanibek@gmail.com","groupName":"DevOps-2026","course":3},{"id":2,"firstName":"Aruzhan","lastName":"Serikova","email":"aruzhan.serikova@example.com","groupName":"DevOps-2026","course":3},{"id":3,"firstName":"Dias","lastName":"Nurlanov","email":"dias.nurlanov@example.com","groupName":"SE-2027","course":2}]
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" -i -X POST http://localhost:8081/api/students -H 'Content-Type: application/json' -d '{"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.live@example.com","groupName":"DevOps-2026","course":3}' | grep -E -v '^(Date|Keep-Alive|Connection|Transfer-Encoding):'
+HTTP/1.1 201 
+Location: http://localhost:8081/api/students/4
+Content-Type: application/json
+
+{"id":4,"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.live@example.com","groupName":"DevOps-2026","course":3}
+HTTP 201
+
+NEW_ID=4
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/students/4
+{"id":4,"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.live@example.com","groupName":"DevOps-2026","course":3}
+HTTP 200
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/students/999999
+{"timestamp":"2026-10-27T17:15:58.264925Z","status":404,"error":"Not Found","message":"Student with id 999999 not found","path":"/api/students/999999"}
+HTTP 404
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:8081/api/students -H 'Content-Type: application/json' -d '{"firstName":"","lastName":"Taubakul","email":"bad-email","groupName":"DevOps-2026","course":9}'
+{"timestamp":"2026-10-27T17:15:58.275462Z","status":400,"error":"Bad Request","message":"Validation failed","path":"/api/students","errors":{"firstName":"firstName is required","email":"email must be a valid email address","course":"course must be between 1 and 4"}}
+HTTP 400
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:8081/api/students -H 'Content-Type: application/json' -d '{"firstName":"Zhanibek","lastName":"Taubakul","email":"taubakulzhanibek@gmail.com","groupName":"DevOps-2026","course":3}'
+{"timestamp":"2026-10-27T17:15:58.285739Z","status":409,"error":"Conflict","message":"Student with email taubakulzhanibek@gmail.com already exists","path":"/api/students"}
+HTTP 409
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/students/abc
+{"timestamp":"2026-10-27T17:15:58.293893Z","status":400,"error":"Bad Request","message":"Parameter 'id' has invalid value 'abc'","path":"/api/students/abc"}
+HTTP 400
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X POST http://localhost:8081/api/students -H 'Content-Type: application/json' -d '{"firstName":"Temp","lastName":"ToDelete","email":"delete.me@example.com","groupName":"DevOps-2026","course":1}'
+{"id":5,"firstName":"Temp","lastName":"ToDelete","email":"delete.me@example.com","groupName":"DevOps-2026","course":1}
+HTTP 201
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X DELETE http://localhost:8081/api/students/5
+
+HTTP 204
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X DELETE http://localhost:8081/api/students/5
+{"timestamp":"2026-10-27T17:15:58.372750Z","status":404,"error":"Not Found","message":"Student with id 5 not found","path":"/api/students/5"}
+HTTP 404
+
+$ curl -s -w "\nHTTP %{http_code}\n" -X PUT http://localhost:8081/api/students/4 -H 'Content-Type: application/json' -d '{}'   # PUT is planned for stage 3
+{"timestamp":"2026-10-27T17:15:58.383Z","status":405,"error":"Method Not Allowed","path":"/api/students/4"}
+HTTP 405
+
+$ curl -s http://localhost:8081/api/students | python3 -I -m json.tool
+[
+    {
+        "id": 1,
+        "firstName": "Zhanibek",
+        "lastName": "Taubakul",
+        "email": "taubakulzhanibek@gmail.com",
+        "groupName": "DevOps-2026",
+        "course": 3
+    },
+    {
+        "id": 2,
+        "firstName": "Aruzhan",
+        "lastName": "Serikova",
+        "email": "aruzhan.serikova@example.com",
+        "groupName": "DevOps-2026",
+        "course": 3
+    },
+    {
+        "id": 3,
+        "firstName": "Dias",
+        "lastName": "Nurlanov",
+        "email": "dias.nurlanov@example.com",
+        "groupName": "SE-2027",
+        "course": 2
+    },
+    {
+        "id": 4,
+        "firstName": "Zhanibek",
+        "lastName": "Taubakul",
+        "email": "zhanibek.live@example.com",
+        "groupName": "DevOps-2026",
+        "course": 3
+    }
+]
+
+## Restart: data must persist in PostgreSQL
+$ docker exec tz-postgres-tmp psql -U $DB_USERNAME -d $DB_NAME -c "SELECT id, first_name, last_name, email, group_name, course FROM students ORDER BY id;"
+ id | first_name | last_name |            email             | group_name  | course 
+----+------------+-----------+------------------------------+-------------+--------
+  1 | Zhanibek   | Taubakul  | taubakulzhanibek@gmail.com   | DevOps-2026 |      3
+  2 | Aruzhan    | Serikova  | aruzhan.serikova@example.com | DevOps-2026 |      3
+  3 | Dias       | Nurlanov  | dias.nurlanov@example.com    | SE-2027     |      2
+  4 | Zhanibek   | Taubakul  | zhanibek.live@example.com    | DevOps-2026 |      3
+(4 rows)
+
+
+app PID 42517 stopped, port 8081 is free
+
+app started, PID 42593
+$ grep -E "Seeded|seeding skipped" $APP_LOG | sed -E "s/^.{0,40}(INFO|WARN)/\1/" | cut -c1-200
+INFO 42517 --- [taubakul-zhanibek-student-api] [           main] k.t.studentapi.config.DataInitializer    : Seeded 3 students (author: Taubakul Zhanibek)
+INFO 42593 --- [taubakul-zhanibek-student-api] [           main] k.t.studentapi.config.DataInitializer    : Students table already has data, seeding skipped
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/students/4
+{"id":4,"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.live@example.com","groupName":"DevOps-2026","course":3}
+HTTP 200
+
+$ curl -s http://localhost:8081/api/students | python3 -I -c 'import json,sys; d=json.load(sys.stdin); print(len(d), "students after restart:", [s["email"] for s in d])'
+4 students after restart: ['taubakulzhanibek@gmail.com', 'aruzhan.serikova@example.com', 'dias.nurlanov@example.com', 'zhanibek.live@example.com']
+
+## Cleanup
+app PID 42593 stopped, port 8081 is free
+
+$ docker rm -f tz-postgres-tmp
+tz-postgres-tmp
+
+$ docker ps -a --filter name=tz-postgres-tmp --format "{{.Names}}" | grep . || echo "container tz-postgres-tmp removed"
+container tz-postgres-tmp removed
+
+$ lsof -nP -iTCP:5432 -sTCP:LISTEN || echo "port 5432 is free"
+port 5432 is free
+
+$ lsof -nP -iTCP:8081 -sTCP:LISTEN || echo "port 8081 is free"
+port 8081 is free
+

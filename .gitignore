@@ -1,0 +1,23 @@
+# --- Gradle build output ---
+build/
+.gradle/
+out/
+
+# --- IDE settings ---
+.idea/
+*.iml
+.vscode/
+
+# --- OS files ---
+.DS_Store
+
+# --- Secrets: real environment files are never committed ---
+.env
+*.env
+# template with placeholders only
+!.env.example
+
+# --- Logs ---
+*.log
+# Part 1 results are kept in the repository as evidence
+!logs/Taubakul_Zhanibek_system_report.log

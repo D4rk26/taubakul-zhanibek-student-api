@@ -1,0 +1,63 @@
+# Task 1.1 — Project structure (Taubakul Zhanibek)
+
+$ pwd
+/Users/zhanibek/projects/taubakul-zhanibek-student-api
+
+$ mkdir -p scripts logs backups src
+
+$ touch Dockerfile docker-compose.yml Jenkinsfile build.gradle README.md
+
+$ cat > README.md <<"MD"
+# taubakul-zhanibek-student-api
+
+Author: Taubakul Zhanibek
+
+Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
+MD
+
+$ cat README.md
+# taubakul-zhanibek-student-api
+
+Author: Taubakul Zhanibek
+
+Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
+
+$ touch scripts/Taubakul_Zhanibek_system_report.sh
+
+$ touch logs/Taubakul_Zhanibek_system_report.log
+
+$ ls -l logs/Taubakul_Zhanibek_system_report.log
+-rw-r--r--  1 zhanibek  staff  0 27 окт.  21:54 logs/Taubakul_Zhanibek_system_report.log
+
+$ wc -c < logs/Taubakul_Zhanibek_system_report.log
+       0
+
+$ tree -a --noreport -I docs
+.
+├── backups
+├── build.gradle
+├── docker-compose.yml
+├── Dockerfile
+├── Jenkinsfile
+├── logs
+│   └── Taubakul_Zhanibek_system_report.log
+├── README.md
+├── scripts
+│   └── Taubakul_Zhanibek_system_report.sh
+└── src
+
+$ for item in scripts/ logs/ backups/ src/ Dockerfile docker-compose.yml Jenkinsfile build.gradle README.md scripts/Taubakul_Zhanibek_system_report.sh logs/Taubakul_Zhanibek_system_report.log; do
+  if [ -e "$item" ]; then echo "OK       $item"; else echo "MISSING  $item"; fi
+done
+OK       scripts/
+OK       logs/
+OK       backups/
+OK       src/
+OK       Dockerfile
+OK       docker-compose.yml
+OK       Jenkinsfile
+OK       build.gradle
+OK       README.md
+OK       scripts/Taubakul_Zhanibek_system_report.sh
+OK       logs/Taubakul_Zhanibek_system_report.log
+

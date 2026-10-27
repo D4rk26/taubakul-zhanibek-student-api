@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: taubakul-zhanibek-student-api
+  datasource:
+    # All connection settings come from environment variables.
+    # DB_HOST is "localhost" for local runs and the Compose service name inside Docker.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:studentdb}
+    username: ${DB_USERNAME}
+    # No default on purpose: the password must be provided by the environment
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: taubakul-zhanibek-student-api
+    author: Taubakul Zhanibek Nurlanuly
