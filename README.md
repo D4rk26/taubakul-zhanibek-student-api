@@ -2,7 +2,7 @@
 
 Author: Taubakul Zhanibek
 
-Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
+Student API by Taubakul Zhanibek — DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
 
 ## Tech stack
 
