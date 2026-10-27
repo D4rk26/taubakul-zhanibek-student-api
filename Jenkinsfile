@@ -16,6 +16,7 @@ pipeline {
         timeout(time: 30, unit: 'MINUTES')              // abort a hanging build
         buildDiscarder(logRotator(numToKeepStr: '20'))  // keep the last 20 builds
         disableConcurrentBuilds()                       // one build per branch at a time
+        skipDefaultCheckout(true)                       // the Checkout stage gets the code itself
     }
 
     environment {
