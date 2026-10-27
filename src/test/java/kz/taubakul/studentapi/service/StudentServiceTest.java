@@ -60,6 +60,19 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void updateRejectsEmailOfAnotherStudent() {
+		Student existing = new Student("Zhanibek", "Taubakul", "zhanibek@example.com", "DevOps-2026", 3);
+		StudentRequest request = new StudentRequest(
+				"Zhanibek", "Taubakul", "taubakulzhanibek@gmail.com", "DevOps-2026", 3);
+		when(repository.findById(7L)).thenReturn(Optional.of(existing));
+		when(repository.existsByEmailIgnoreCaseAndIdNot("taubakulzhanibek@gmail.com", 7L)).thenReturn(true);
+
+		assertThatThrownBy(() -> service.update(7L, request))
+				.isInstanceOf(DuplicateEmailException.class);
+		verify(repository, never()).saveAndFlush(any());
+	}
+
+	@Test
 	void findByIdThrowsWhenStudentDoesNotExist() {
 		when(repository.findById(42L)).thenReturn(Optional.empty());
 

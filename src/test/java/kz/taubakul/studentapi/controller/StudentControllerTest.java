@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -145,6 +146,83 @@ class StudentControllerTest {
 						.content(duplicate))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.message").value("Student with email taubakulzhanibek@gmail.com already exists"));
+	}
+
+	@Test
+	void updateStudentReturns200WithNewData() throws Exception {
+		Student saved = saveStudent("update.taubakul@example.com");
+		String update = """
+				{
+				  "firstName": "Zhanibek",
+				  "lastName": "Taubakul",
+				  "email": "zhanibek.updated@example.com",
+				  "groupName": "DevOps-2027",
+				  "course": 4
+				}
+				""";
+
+		mockMvc.perform(put("/api/students/{id}", saved.getId())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(update))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(saved.getId()))
+				.andExpect(jsonPath("$.firstName").value("Zhanibek"))
+				.andExpect(jsonPath("$.email").value("zhanibek.updated@example.com"))
+				.andExpect(jsonPath("$.groupName").value("DevOps-2027"))
+				.andExpect(jsonPath("$.course").value(4));
+
+		mockMvc.perform(get("/api/students/{id}", saved.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.email").value("zhanibek.updated@example.com"));
+	}
+
+	@Test
+	void updateStudentCanKeepOwnEmail() throws Exception {
+		Student saved = saveStudent("same.taubakul@example.com");
+		String update = STUDENT_JSON.replace("zhanibek.taubakul.test@example.com", "same.taubakul@example.com");
+
+		mockMvc.perform(put("/api/students/{id}", saved.getId())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(update))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.email").value("same.taubakul@example.com"))
+				.andExpect(jsonPath("$.firstName").value("Zhanibek"));
+	}
+
+	@Test
+	void updateMissingStudentReturns404() throws Exception {
+		mockMvc.perform(put("/api/students/{id}", 999999)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(STUDENT_JSON))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.message").value("Student with id 999999 not found"));
+	}
+
+	@Test
+	void updateWithInvalidDataReturns400() throws Exception {
+		Student saved = saveStudent("invalid.taubakul@example.com");
+		String invalid = STUDENT_JSON.replace("\"course\": 3", "\"course\": 0")
+				.replace("zhanibek.taubakul.test@example.com", "wrong-email");
+
+		mockMvc.perform(put("/api/students/{id}", saved.getId())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(invalid))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors.email").exists())
+				.andExpect(jsonPath("$.errors.course").value("course must be between 1 and 4"));
+	}
+
+	@Test
+	void updateWithEmailOfAnotherStudentReturns409() throws Exception {
+		Student saved = saveStudent("conflict.taubakul@example.com");
+		// taubakulzhanibek@gmail.com belongs to the seeded student
+		String update = STUDENT_JSON.replace("zhanibek.taubakul.test@example.com", "taubakulzhanibek@gmail.com");
+
+		mockMvc.perform(put("/api/students/{id}", saved.getId())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(update))
+				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.message").value("Student with email taubakulzhanibek@gmail.com already exists"));
 	}
 
