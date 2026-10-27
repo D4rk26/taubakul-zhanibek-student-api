@@ -29,7 +29,7 @@ export DB_HOST=localhost DB_PORT=5432 DB_NAME=studentdb DB_USERNAME=<user>
 export DB_PASSWORD=<password>
 SERVER_PORT=8081 ./gradlew bootRun
 # or
-SERVER_PORT=8081 java -jar build/libs/taubakul-zhanibek-student-api-1.0.0.jar
+SERVER_PORT=8081 java -jar build/libs/taubakul-zhanibek-student-api-1.0.1.jar
 ```
 
 On first start, if the `students` table is empty, three test students are inserted
@@ -47,6 +47,37 @@ On first start, if the `students` table is empty, three test students are insert
 | `SERVER_PORT` | `8080` | HTTP port of the application |
 
 Copy `.env.example` to `.env` for local values; `.env` must not be committed.
+
+## Run with Docker
+
+Requirements: Docker with Docker Compose v2.
+
+```bash
+cp .env.example .env              # then set DB_USERNAME and a real DB_PASSWORD
+                                  # e.g. DB_PASSWORD=$(openssl rand -hex 24)
+docker compose up -d --build      # build the image and start PostgreSQL + the app
+docker compose ps                 # db must be "healthy", app "Up"
+curl http://localhost:8081/api/info
+./scripts/api_test.sh             # end-to-end API test (default URL http://localhost:8081)
+docker compose logs -f app        # follow application logs
+docker compose down               # stop and remove containers (data is kept in the volume)
+docker compose down -v            # ...and also delete the database volume (all data!)
+```
+
+| Item | Value |
+|---|---|
+| Image | `taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek` (multi-stage: JDK build → JRE runtime) |
+| Compose project | `taubakul-zhanibek-student-api` |
+| Containers | `taubakul-zhanibek-app`, `taubakul-zhanibek-postgres` |
+| App URL | `http://localhost:8081` (host 8081 → container 8080) |
+| Database | PostgreSQL 16, not published to the host, reachable as `db:5432` inside the network |
+| Network / volume | `taubakul-zhanibek-net` / `taubakul-zhanibek-pgdata` |
+
+Variables from `.env` (see `.env.example`): `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`.
+Inside Compose the app gets `DB_HOST=db` and `DB_PORT=5432` from `docker-compose.yml`.
+
+A Postman collection with the same requests is in
+`docs/postman/Taubakul_Zhanibek_Student_API.postman_collection.json` (variable `baseUrl`).
 
 ## REST API
 
@@ -92,6 +123,11 @@ Errors use one JSON format:
 Validation errors (400) also contain `errors` with a message per field; a duplicate email returns 409.
 
 ## Changelog
+
+### 1.0.1 — Taubakul Zhanibek
+- Docker: multi-stage Dockerfile, Docker Compose with PostgreSQL 16 (health check, named volume,
+  dedicated network), API test script `scripts/api_test.sh` and a Postman collection.
+- Version bumped to 1.0.1 (shown by `GET /api/info`).
 
 ### 1.0.0 — Taubakul Zhanibek
 - Added `PUT /api/students/{id}` (update a student, branch `feature/taubakul-zhanibek-crud`):

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'kz.taubakul'
-version = '1.0.0'
+version = '1.0.1'
 description = 'Student API - DevOps midterm project by Taubakul Zhanibek'
 
 java {

@@ -15,6 +15,7 @@ import kz.taubakul.studentapi.entity.Student;
 import kz.taubakul.studentapi.repository.StudentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -47,6 +48,9 @@ class StudentControllerTest {
 
 	@Autowired
 	private StudentRepository repository;
+
+	@Autowired
+	private BuildProperties buildProperties;
 
 	private Student saveStudent(String email) {
 		return repository.save(new Student("Nurlan", "Taubakul", email, "DevOps-2026", 2));
@@ -239,7 +243,8 @@ class StudentControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.project").value("taubakul-zhanibek-student-api"))
 				.andExpect(jsonPath("$.author").value("Taubakul Zhanibek Nurlanuly"))
-				.andExpect(jsonPath("$.version").value("1.0.0"));
+				// version must be the one from build.gradle (via build-info.properties)
+				.andExpect(jsonPath("$.version").value(buildProperties.getVersion()));
 	}
 
 	@Test

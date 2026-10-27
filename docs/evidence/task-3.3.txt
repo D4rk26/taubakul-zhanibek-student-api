@@ -1,0 +1,266 @@
+# Task 3.3 — Container management (Taubakul Zhanibek)
+
+## 1. Running containers
+$ docker ps --filter name=taubakul-zhanibek --format "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+CONTAINER ID   NAMES                        IMAGE                                                  STATUS                    PORTS
+67cc1dccad94   taubakul-zhanibek-app        taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek   Up 50 seconds             0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp
+b8929d98b536   taubakul-zhanibek-postgres   postgres:16-alpine                                     Up 56 seconds (healthy)   5432/tcp
+
+$ docker compose ps
+NAME                         IMAGE                                                  COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+taubakul-zhanibek-app        taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek   "java -jar /app/app.…"   app       57 seconds ago   Up 50 seconds             0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp
+taubakul-zhanibek-postgres   postgres:16-alpine                                     "docker-entrypoint.s…"   db        57 seconds ago   Up 56 seconds (healthy)   5432/tcp
+
+## 2. Application logs
+$ docker compose logs app --tail 15 --no-log-prefix | cut -c1-200
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-27T17:49:24.233Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.p
+2026-10-27T17:49:24.259Z  WARN 1 --- [taubakul-zhanibek-student-api] [           main] org.hibernate.orm.jdbc.warn              : HHH000247: ErrorCode: 0, SQLState: 00000
+2026-10-27T17:49:24.259Z  WARN 1 --- [taubakul-zhanibek-student-api] [           main] org.hibernate.orm.jdbc.warn              : constraint "uke2rndfrsx22acpq2ty1caeuyw" of relation "students" does n
+2026-10-27T17:49:24.261Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T17:49:24.299Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-27T17:49:24.538Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-27T17:49:24.566Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-10-27T17:49:24.569Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] .s.TaubakulZhanibekStudentApiApplication : Started TaubakulZhanibekStudentApiApplication in 1.869 seconds (proces
+2026-10-27T17:49:24.725Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] k.t.studentapi.config.DataInitializer    : Seeded 3 students (author: Taubakul Zhanibek)
+2026-10-27T17:49:26.603Z  INFO 1 --- [taubakul-zhanibek-student-api] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-27T17:49:26.603Z  INFO 1 --- [taubakul-zhanibek-student-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-27T17:49:26.604Z  INFO 1 --- [taubakul-zhanibek-student-api] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+
+## 3. Inspect (password masked)
+$ docker inspect taubakul-zhanibek-app --format "Name:    {{.Name}}
+Image:   {{.Config.Image}} ({{.Image}})
+State:   {{.State.Status}}, started {{.State.StartedAt}}, restarts {{.RestartCount}}
+Restart: {{.HostConfig.RestartPolicy.Name}}
+User:    {{.Config.User}}
+Ports:   {{json .NetworkSettings.Ports}}
+Mounts:  {{json .Mounts}}
+Networks:{{range \$n, \$c := .NetworkSettings.Networks}} {{\$n}} ip={{\$c.IPAddress}} aliases={{json \$c.DNSNames}}{{end}}
+Env:{{range .Config.Env}}
+  {{.}}{{end}}" | sed -E "s/(PASSWORD=).*/\1*****(masked)/"
+Name:    /taubakul-zhanibek-app
+Image:   taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek (sha256:9057bb06ff0e9723ee66c8507d9a3431b8a3ad46615e6b82c4895630b7ee0eef)
+State:   running, started 2026-10-27T17:49:22.422927719Z, restarts 0
+Restart: unless-stopped
+User:    app
+Ports:   {"8080/tcp":[{"HostIp":"0.0.0.0","HostPort":"8081"},{"HostIp":"::","HostPort":"8081"}]}
+Mounts:  []
+Networks: taubakul-zhanibek-net ip=172.18.0.3 aliases=["taubakul-zhanibek-app","app","67cc1dccad94"]
+Env:
+  DB_USERNAME=taubakul_zhanibek
+  DB_PASSWORD=*****(masked)
+  DB_HOST=db
+  DB_PORT=5432
+  DB_NAME=studentdb
+  PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  JAVA_HOME=/opt/java/openjdk
+  LANG=en_US.UTF-8
+  LANGUAGE=en_US:en
+  LC_ALL=en_US.UTF-8
+  JAVA_VERSION=jdk-21.0.12.1+1
+
+$ docker inspect taubakul-zhanibek-postgres --format "Image: {{.Config.Image}}  Health: {{.State.Health.Status}}  Mounts: {{range .Mounts}}{{.Type}} {{.Name}} -> {{.Destination}}{{end}}"
+Image: postgres:16-alpine  Health: healthy  Mounts: volume taubakul-zhanibek-pgdata -> /var/lib/postgresql/data
+
+## 4. Commands inside the app container
+$ docker compose exec app whoami
+app
+
+$ docker compose exec app java -version
+openjdk version "21.0.12.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)
+
+$ docker compose exec app ls -l /app
+total 53848
+-rw-r--r-- 1 root root 55137552 Oct 27 17:47 app.jar
+
+$ docker compose exec app curl -s -w "\nHTTP %{http_code}\n" http://localhost:8080/api/info
+{"project":"taubakul-zhanibek-student-api","author":"Taubakul Zhanibek Nurlanuly","version":"1.0.0"}
+HTTP 200
+
+$ docker compose exec app curl -s -w "\nHTTP %{http_code}\n" http://localhost:8080/actuator/health
+{"groups":["liveness","readiness"],"status":"UP"}
+HTTP 200
+
+## 5. Stop and start the app service
+$ docker compose stop app
+ Container taubakul-zhanibek-app Stopping 
+ Container taubakul-zhanibek-app Stopped 
+
+$ docker compose ps -a --format "table {{.Name}}\t{{.Status}}"
+NAME                         STATUS
+taubakul-zhanibek-app        Exited (143) Less than a second ago
+taubakul-zhanibek-postgres   Up 57 seconds (healthy)
+
+$ curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8081/api/info || echo "connection refused — app is stopped"
+HTTP 000
+connection refused — app is stopped
+
+$ docker compose start app
+ Container taubakul-zhanibek-postgres Waiting 
+ Container taubakul-zhanibek-postgres Healthy 
+ Container taubakul-zhanibek-app Starting 
+ Container taubakul-zhanibek-app Started 
+
+$ docker compose ps --format "table {{.Name}}\t{{.Status}}"
+NAME                         STATUS
+taubakul-zhanibek-app        Up 2 seconds
+taubakul-zhanibek-postgres   Up 59 seconds (healthy)
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/students | cut -c1-200
+[{"id":1,"firstName":"Zhanibek","lastName":"Taubakul","email":"taubakulzhanibek@gmail.com","groupName":"DevOps-2026","course":3},{"id":2,"firstName":"Aruzhan","lastName":"Serikova","email":"aruzhan.se
+HTTP 200
+
+$ docker compose restart app
+ Container taubakul-zhanibek-app Restarting 
+ Container taubakul-zhanibek-app Started 
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/info
+{"project":"taubakul-zhanibek-student-api","author":"Taubakul Zhanibek Nurlanuly","version":"1.0.0"}
+HTTP 200
+
+## 6. Rebuild after changing the application version (1.0.0 -> 1.0.1)
+$ docker image inspect taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek --format "BEFORE  Id: {{.Id}}  Created: {{.Created}}"
+BEFORE  Id: sha256:9057bb06ff0e9723ee66c8507d9a3431b8a3ad46615e6b82c4895630b7ee0eef  Created: 2026-10-27T17:47:08.491466212Z
+
+$ curl -s http://localhost:8081/api/info
+{"project":"taubakul-zhanibek-student-api","author":"Taubakul Zhanibek Nurlanuly","version":"1.0.0"}
+$ git show --stat --format="%h %s" HEAD | head -4
+20e10f5 Bump application version to 1.0.1
+
+ build.gradle                                                       | 2 +-
+ .../kz/taubakul/studentapi/controller/StudentControllerTest.java   | 7 ++++++-
+
+$ grep -n "^version" build.gradle
+8:version = '1.0.1'
+
+$ docker compose up -d --build app 2>&1 | grep -vE "^#|^ *$"
+ Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek Building 
+ Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek Built 
+ Container taubakul-zhanibek-postgres Running 
+ Container taubakul-zhanibek-app Recreate 
+ Container taubakul-zhanibek-app Recreated 
+ Container taubakul-zhanibek-postgres Waiting 
+ Container taubakul-zhanibek-postgres Healthy 
+ Container taubakul-zhanibek-app Starting 
+ Container taubakul-zhanibek-app Started 
+
+$ docker image inspect taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek --format "AFTER   Id: {{.Id}}  Created: {{.Created}}"
+AFTER   Id: sha256:37ef2643307b554932556c6e787681ba3b048f6ae4abf9953f1c0011b117b495  Created: 2026-10-27T17:51:56.286077262Z
+
+$ docker inspect taubakul-zhanibek-app --format "container now runs image {{.Image}}"
+container now runs image sha256:37ef2643307b554932556c6e787681ba3b048f6ae4abf9953f1c0011b117b495
+
+$ docker compose exec app ls -l /app
+total 53848
+-rw-r--r-- 1 root root 55137551 Oct 27 17:51 app.jar
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://localhost:8081/api/info
+{"project":"taubakul-zhanibek-student-api","author":"Taubakul Zhanibek Nurlanuly","version":"1.0.1"}
+HTTP 200
+
+$ docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}" | grep -E "REPOSITORY|taubakul-zhanibek-student-api|<none>"
+REPOSITORY:TAG                                         IMAGE ID       CREATED
+taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek   37ef2643307b   4 seconds ago
+
+## 7. Persistence: data survives docker compose down / up (without -v)
+$ curl -s -w '\nHTTP %{http_code}\n' -X POST http://localhost:8081/api/students -H 'Content-Type: application/json' -d '{"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.persist@example.com","groupName":"DevOps-2026","course":3}'
+{"id":4,"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.persist@example.com","groupName":"DevOps-2026","course":3}
+HTTP 201
+
+$ docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, first_name, last_name, email FROM students ORDER BY id;"'
+ id | first_name | last_name |            email             
+----+------------+-----------+------------------------------
+  1 | Zhanibek   | Taubakul  | taubakulzhanibek@gmail.com
+  2 | Aruzhan    | Serikova  | aruzhan.serikova@example.com
+  3 | Dias       | Nurlanov  | dias.nurlanov@example.com
+  4 | Zhanibek   | Taubakul  | zhanibek.persist@example.com
+(4 rows)
+
+
+$ docker compose down
+ Container taubakul-zhanibek-app Stopping 
+ Container taubakul-zhanibek-app Stopped 
+ Container taubakul-zhanibek-app Removing 
+ Container taubakul-zhanibek-app Removed 
+ Container taubakul-zhanibek-postgres Stopping 
+ Container taubakul-zhanibek-postgres Stopped 
+ Container taubakul-zhanibek-postgres Removing 
+ Container taubakul-zhanibek-postgres Removed 
+ Network taubakul-zhanibek-net Removing 
+ Network taubakul-zhanibek-net Removed 
+
+$ docker ps -a --filter name=taubakul-zhanibek --format "{{.Names}}" | grep . || echo "no project containers left"
+taubakul-zhanibek-linux
+
+$ docker volume ls --filter name=taubakul-zhanibek
+DRIVER    VOLUME NAME
+local     taubakul-zhanibek-pgdata
+
+$ docker compose up -d 2>&1 | grep -vE "^ *$"
+ Network taubakul-zhanibek-net Creating 
+ Network taubakul-zhanibek-net Creating 
+ Network taubakul-zhanibek-net Created 
+ Network taubakul-zhanibek-net Created 
+ Container taubakul-zhanibek-postgres Creating 
+ Container taubakul-zhanibek-postgres Created 
+ Container taubakul-zhanibek-app Creating 
+ Container taubakul-zhanibek-app Created 
+ Container taubakul-zhanibek-postgres Starting 
+ Container taubakul-zhanibek-postgres Started 
+ Container taubakul-zhanibek-postgres Waiting 
+ Container taubakul-zhanibek-postgres Healthy 
+ Container taubakul-zhanibek-app Starting 
+ Container taubakul-zhanibek-app Started 
+
+$ docker compose logs app --no-log-prefix | grep -E "Seeded|seeding skipped" | cut -c1-170
+2026-10-27T17:52:26.247Z  INFO 1 --- [taubakul-zhanibek-student-api] [           main] k.t.studentapi.config.DataInitializer    : Students table already has data, seeding
+
+$ curl -s http://localhost:8081/api/students | jq -c '.[] | select(.email=="zhanibek.persist@example.com")'
+{"id":4,"firstName":"Zhanibek","lastName":"Taubakul","email":"zhanibek.persist@example.com","groupName":"DevOps-2026","course":3}
+
+$ docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT id, first_name, last_name, email FROM students ORDER BY id;"'
+ id | first_name | last_name |            email             
+----+------------+-----------+------------------------------
+  1 | Zhanibek   | Taubakul  | taubakulzhanibek@gmail.com
+  2 | Aruzhan    | Serikova  | aruzhan.serikova@example.com
+  3 | Dias       | Nurlanov  | dias.nurlanov@example.com
+  4 | Zhanibek   | Taubakul  | zhanibek.persist@example.com
+(4 rows)
+
+
+$ docker volume inspect taubakul-zhanibek-pgdata
+[
+    {
+        "CreatedAt": "2026-10-27T17:49:16Z",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.config-hash": "1ad4b4dcee43d35bd0ed03aeda3a0b71d1c5cef73ffde3c6deee6ed420f1271a",
+            "com.docker.compose.project": "taubakul-zhanibek-student-api",
+            "com.docker.compose.version": "5.5.1",
+            "com.docker.compose.volume": "taubakul-zhanibek-pgdata"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/taubakul-zhanibek-pgdata/_data",
+        "Name": "taubakul-zhanibek-pgdata",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+## Notes
+- `docker compose down` removes the containers and the network, but keeps named volumes. After `up -d`
+  the new PostgreSQL container mounts the same volume taubakul-zhanibek-pgdata, so the student created
+  before (zhanibek.persist@example.com) is still there, and the app log says "seeding skipped".
+- `docker compose down -v` would also delete the volume taubakul-zhanibek-pgdata, i.e. all database
+  data; the next start would create an empty database and seed the 3 demo students again.
+- Exit code 143 after `docker compose stop app` = 128 + 15 (SIGTERM): Docker sent SIGTERM and the JVM
+  shut down gracefully (exec-form ENTRYPOINT makes java PID 1, so it receives the signal).
+- The image ID shown as BEFORE in step 6 (9057bb06…) differs from the ID in task 3.1 (f253edd3…)
+  although Created is the same: `docker compose up --build` in task 3.2 rebuilt the image from the
+  same cached layers; only the image manifest changed, not its content.
+- `taubakul-zhanibek-linux` in the `docker ps -a` output above is an older, unrelated container
+  (ubuntu:24.04, created 2026-10-11 for a previous lab, exited); it is not part of this Compose project
+  and was not touched. Both project containers were removed by `down` and re-created by `up -d`.
