@@ -79,6 +79,28 @@ Inside Compose the app gets `DB_HOST=db` and `DB_PORT=5432` from `docker-compose
 A Postman collection with the same requests is in
 `docs/postman/Taubakul_Zhanibek_Student_API.postman_collection.json` (variable `baseUrl`).
 
+## CI/CD (Jenkins)
+
+Jenkins job **`Taubakul_Zhanibek_Student_API`** (Multibranch Pipeline) builds every branch of this
+repository with the declarative [`Jenkinsfile`](Jenkinsfile):
+
+| Stage | What it does |
+|---|---|
+| Checkout | `checkout scm` — gets the branch from GitHub (credential `github-token`) |
+| Build | `./gradlew clean assemble` — compiles and packages the jar |
+| Test | `./gradlew test` — runs all tests, JUnit report is published; a failing test stops the pipeline |
+| Docker Build | `docker build -t taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek -t ...:build-N .` |
+| Verify | `docker image inspect` — prints ID, Created, Size, author label; fails if the image is missing |
+
+Jenkins itself is configured as code in [`jenkins/`](jenkins):
+`plugins.txt` (plugins, installed with jenkins-plugin-manager), `casc.yaml` (Configuration as Code:
+admin user, built-in node with label `docker`, JDK `jdk-21`, PATH with the Docker CLI, the job via
+Job DSL) and `credentials.template.yaml` (the GitHub credential without the token).
+
+Trigger: Jenkins runs on `127.0.0.1:8080`, so a GitHub webhook cannot reach it. The multibranch job
+scans the repository every 2 minutes (periodic folder trigger) and builds branches with new commits.
+Continuous Integration only: the pipeline builds, tests and packages the image; there is no deployment.
+
 ## REST API
 
 Base URL: `http://localhost:<SERVER_PORT>`
