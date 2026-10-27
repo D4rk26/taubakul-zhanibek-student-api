@@ -2,7 +2,7 @@
 
 Author: Taubakul Zhanibek
 
-Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
+REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL.
 
 ## Tech stack
 
