@@ -1,0 +1,101 @@
+# Task 4.4 — Automation (Taubakul Zhanibek)
+
+## Trigger configuration
+$ ~/projects/jenkins-tools/jcli get-job Taubakul_Zhanibek_Student_API | grep -E "PeriodicFolderTrigger|<spec>|<interval>"
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@6.1106.v3a_d9a_6d2465e">
+      <spec>* * * * *</spec>
+      <interval>120000</interval>
+    </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+
+$ grep -n -E "pollSCM|triggers" Jenkinsfile || echo "no triggers block in Jenkinsfile (multibranch scanning starts the builds)"
+no triggers block in Jenkinsfile (multibranch scanning starts the builds)
+
+## New commit on main, pushed at 23:35:05; no manual build
+$ git log --oneline -1 a92c42d; git show --stat --format="%an <%ae> | %ad" a92c42d | head -4
+a92c42d Describe CI/CD pipeline in README (Taubakul Zhanibek)
+Taubakul Zhanibek <taubakulzhanibek@gmail.com> | Tue Oct 27 23:35:03 2026 +0500
+
+ README.md | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/3/api/json?tree=number,displayName,result,timestamp,actions%5Bcauses%5BshortDescription%5D%5D' | jq -c '{number, displayName, result, started: (.timestamp/1000|strflocaltime("%H:%M:%S")), causes: [.actions[]?.causes[]?.shortDescription]}'
+{"number":3,"displayName":"#3 Taubakul Zhanibek","result":"SUCCESS","started":"23:36:17","causes":["Branch indexing"]}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/indexing/consoleText' | grep -E 'Started|Checking branch main|Changes detected|Scheduled build for branch: main|Finished' | cut -c1-170
+  Checking branch main
+Changes detected: main (c824aefdfae29c68da8ed54988591f0f8615589c → a92c42de5ae31d4267ecffc7ef413708e6795e6e)
+Scheduled build for branch: main
+[вт окт. 27 23:36:11 ALMT 2026] Finished branch indexing. Indexing took 3,7 секунды
+Finished: SUCCESS
+
+## Build history of the job (all branches)
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/api/json?tree=jobs%5Bname,builds%5Bnumber,result,timestamp,actions%5Bcauses%5BshortDescription%5D%5D%5D%5D' | jq -r '.jobs[] | .name as $b | .builds[] | "\($b|gsub("%2F";"/")) #\(.number) \(.result) \(.timestamp/1000|strflocaltime("%H:%M:%S")) cause: \([.actions[]?.causes[]?.shortDescription] | join(", "))"'
+feature/taubakul-zhanibek-crud #1 SUCCESS 23:20:42 cause: Branch indexing
+feature/taubakul-zhanibek-docker #1 SUCCESS 23:20:42 cause: Branch indexing
+feature/taubakul-zhanibek-documentation #1 SUCCESS 23:20:42 cause: Branch indexing
+feature/taubakul-zhanibek-jenkins #3 SUCCESS 23:28:22 cause: Branch indexing
+feature/taubakul-zhanibek-jenkins #2 SUCCESS 23:26:15 cause: Branch indexing
+feature/taubakul-zhanibek-jenkins #1 SUCCESS 23:24:24 cause: Branch indexing
+main #3 SUCCESS 23:36:17 cause: Branch indexing
+main #2 SUCCESS 23:30:18 cause: Branch indexing
+main #1 SUCCESS 23:20:42 cause: Branch indexing
+test/taubakul-zhanibek-pipeline-failure #2 SUCCESS 23:34:15 cause: Branch indexing
+test/taubakul-zhanibek-pipeline-failure #1 FAILURE 23:32:24 cause: Branch indexing
+
+## Console output of the automatic build main #3
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/3/consoleText' | grep -E 'Branch indexing|Obtained Jenkinsfile|\[Pipeline\] \{ \(|Pipeline of|^\[.*\] [0-9a-f]{7} |tests completed|BUILD SUCCESSFUL|docker build|Author label|VERIFIED|SUCCESS:|Pipeline finished|Finished:' | cut -c1-170
+Branch indexing
+Obtained Jenkinsfile from a92c42de5ae31d4267ecffc7ef413708e6795e6e
+[Pipeline] { (Declarative: Tool Install)
+[Pipeline] { (Checkout)
+[2026-10-27T18:36:22.256Z] Pipeline of Taubakul Zhanibek Nurlanuly: branch main, commit a92c42de5ae31d4267ecffc7ef413708e6795e6e
+[2026-10-27T18:36:22.608Z] a92c42d Describe CI/CD pipeline in README (Taubakul Zhanibek)
+[Pipeline] { (Build)
+[2026-10-27T18:36:27.224Z] BUILD SUCCESSFUL in 2s
+[Pipeline] { (Test)
+[2026-10-27T18:36:33.201Z] BUILD SUCCESSFUL in 5s
+[Pipeline] { (Docker Build)
+[2026-10-27T18:36:33.824Z] + docker build -t taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek -t taubakul-zhanibek-student-api:build-3 .
+[Pipeline] { (Verify)
+[2026-10-27T18:36:35.103Z] Author label: {{index .Config.Labels "author"}}'
+[2026-10-27T18:36:35.103Z] Author label: Taubakul Zhanibek
+[2026-10-27T18:36:35.103Z] + echo 'Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek'
+[2026-10-27T18:36:35.103Z] Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek
+[Pipeline] { (Declarative: Post Actions)
+[2026-10-27T18:36:35.348Z] Pipeline finished for Taubakul Zhanibek Nurlanuly (result: SUCCESS)
+[2026-10-27T18:36:35.445Z] SUCCESS: build 3 of Taubakul Zhanibek Nurlanuly passed all stages
+Finished: SUCCESS
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/3/wfapi/describe' | jq -r '.stages[] | "\(.name): \(.status)"'
+Declarative: Tool Install: SUCCESS
+Checkout: SUCCESS
+Build: SUCCESS
+Test: SUCCESS
+Docker Build: SUCCESS
+Verify: SUCCESS
+Declarative: Post Actions: SUCCESS
+
+## Explanation: trigger
+- GitHub webhook: GitHub sends an HTTP POST on every push to <jenkins-url>/github-webhook/. Our Jenkins
+  listens on 127.0.0.1:8080 (localhost of this laptop), which GitHub's servers cannot reach. In a real
+  setup Jenkins has a public HTTPS address (or a tunnel such as ngrok / cloudflared), the webhook is added
+  in the repository settings (Payload URL .../github-webhook/, content type JSON, push events) and the
+  GitHub plugin starts the scan/build immediately.
+- Used instead: polling. For a Multibranch Pipeline the right place is the folder's periodic trigger
+  (PeriodicFolderTrigger, interval 2 minutes, from casc.yaml): each scan ("branch indexing") finds new
+  branches and new commits and schedules builds. `triggers { pollSCM('H/2 * * * *') }` in the Jenkinsfile
+  would only poll an already existing branch job, starts working only after that branch has been built
+  once, cannot discover new branches and duplicates the scan — so it is not used.
+- Result: commit a92c42d was pushed to main at 23:35:05 without any manual action; the next scan at
+  23:36:11 logged "Changes detected: main (c824aef → a92c42d)" and build main #3 started at 23:36:17 with
+  the cause "Branch indexing" (not "Started by user") and passed all stages.
+
+## CI vs Continuous Delivery vs Continuous Deployment
+- Continuous Integration: every change pushed to the shared repository is built and tested
+  automatically, so integration errors are found within minutes.
+- Continuous Delivery: in addition, every change that passes CI produces a release-ready artifact that can
+  be deployed to production at any time — the deployment itself is a manual decision (button/approval).
+- Continuous Deployment: every change that passes all automated checks is deployed to production
+  automatically, without a human step.
+- This project: CI (checkout, build, test on every push of every branch) plus building and verifying the
+  Docker image (a release-ready artifact). There is no deployment stage — it is not required by the task.

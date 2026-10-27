@@ -163,7 +163,41 @@ Work done in branch `feature/taubakul-zhanibek-docker`, merged into main with `-
 | Postman collection | [x] `docs/postman/Taubakul_Zhanibek_Student_API.postman_collection.json` (`baseUrl`, tests) | `jq` listing | [task-3.4](evidence/task-3.4.txt) |
 
 ## Part 4 — Jenkins CI/CD
-- [ ] 4.1 Jenkins setup
-- [ ] 4.2 Personalized Jenkinsfile
-- [ ] 4.3 Pipeline execution and troubleshooting
-- [ ] 4.4 Automation
+Jenkins configuration as code: `jenkins/plugins.txt`, `jenkins/casc.yaml`, `jenkins/credentials.template.yaml` (no secrets).
+
+### Task 4.1 — Jenkins setup
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Job `Taubakul_Zhanibek_Student_API` | [x] Multibranch Pipeline created by Job DSL from casc.yaml | `jcli list-jobs`, `get-job` | [task-4.1](evidence/task-4.1.txt) |
+| Uses my GitHub repository | [x] Git source `https://github.com/D4rk26/taubakul-zhanibek-student-api.git`, all branches | indexing log: 4 branches found | [task-4.1](evidence/task-4.1.txt) |
+| JDK, Gradle wrapper, Docker-capable agent | [x] tool `jdk-21`; `./gradlew`; built-in node label `docker`, 2 executors, PATH with Docker CLI | REST/groovy output | [task-4.1](evidence/task-4.1.txt) |
+| Credentials in Jenkins Credentials | [x] `github-token` (D4rk26 + token, token only piped, never on disk) | `jcli list-credentials` (ID only) | [task-4.1](evidence/task-4.1.txt) |
+| Jenkins can check out the source | [x] | indexing log `using GIT_ASKPASS ...`, branch builds #1 SUCCESS | [task-4.1](evidence/task-4.1.txt) |
+| Extra: setup without GUI | [x] plugins via jenkins-plugin-manager (82), wizard off via state files, JCasC, admin `zhanibek` (password file chmod 600), API token + jenkins-cli | `/login` 200, anonymous 403, `who-am-i` | [task-4.1](evidence/task-4.1.txt) |
+
+### Task 4.2 — Personalized Jenkinsfile
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Standard `Jenkinsfile` in the repository | [x] declarative, validated by `declarative-linter` | linter output | [task-4.2](evidence/task-4.2.txt) |
+| Stages Checkout, Build, Test, Docker Build, Verify | [x] | `wfapi/describe` → all SUCCESS | [task-4.2](evidence/task-4.2.txt) |
+| My Docker image name | [x] `taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek` + `:build-N` | console `docker build`, Verify | [task-4.2](evidence/task-4.2.txt) |
+| Stops when build or tests fail | [x] `sh` exit code → stage fails → next stages skipped | task 4.3 | [task-4.3](evidence/task-4.3.txt) |
+| My name in the build log | [x] display name `#N Taubakul Zhanibek`, echo with name, "VERIFIED by Taubakul Zhanibek" | consoleText | [task-4.2](evidence/task-4.2.txt) |
+| Green feature branch, merge `--no-ff`, green main | [x] feature #3 SUCCESS → merge `c824aef` → main #2 SUCCESS (22/22 tests) | REST | [task-4.2](evidence/task-4.2.txt) |
+
+### Task 4.3 — Pipeline execution and troubleshooting
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Pipeline runs successfully | [x] main #2, #3; feature #1–#3 | REST | [task-4.2](evidence/task-4.2.txt) |
+| Controlled error in own test branch | [x] `test/taubakul-zhanibek-pipeline-failure`, commit "Introduce failing test to verify CI (Taubakul Zhanibek)" | `git show` | [task-4.3](evidence/task-4.3.txt) |
+| Failed pipeline demonstrated | [x] #1 FAILURE: Test failed, Docker Build/Verify skipped (no shell steps) | `wfapi`, consoleText, JUnit 21/1 | [task-4.3](evidence/task-4.3.txt) |
+| Fix and rerun | [x] separate fix commit → #2 SUCCESS (22/22) | REST | [task-4.3](evidence/task-4.3.txt) |
+| Explain the failure | [x] written explanation | — | [task-4.3](evidence/task-4.3.txt) |
+
+### Task 4.4 — Automation
+| Requirement | Done | Verified by | Evidence |
+|---|---|---|---|
+| Webhook or polling trigger | [x] polling: periodic folder scan every 2 min (webhook impossible to 127.0.0.1 — explained) | `get-job` | [task-4.4](evidence/task-4.4.txt) |
+| New commit, pipeline starts automatically | [x] `a92c42d` pushed 23:35:05 → main #3 at 23:36:17, cause "Branch indexing" | REST causes, indexing log | [task-4.4](evidence/task-4.4.txt) |
+| Build history and console output | [x] all branches with numbers, results, causes; console of main #3 | REST | [task-4.4](evidence/task-4.4.txt) |
+| Explain CI vs Continuous Deployment | [x] CI vs Delivery vs Deployment; this project = CI + image, no deployment | — | [task-4.4](evidence/task-4.4.txt) |

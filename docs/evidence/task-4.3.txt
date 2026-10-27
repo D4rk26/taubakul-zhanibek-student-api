@@ -1,0 +1,157 @@
+# Task 4.3 — Pipeline failure and fix (Taubakul Zhanibek)
+
+## Controlled error on branch test/taubakul-zhanibek-pipeline-failure
+$ git log --oneline -1 test/taubakul-zhanibek-pipeline-failure
+a259ca9 Introduce failing test to verify CI (Taubakul Zhanibek)
+
+$ git show --format="%h %s" test/taubakul-zhanibek-pipeline-failure -- src/test | sed -n "1,20p"
+a259ca9 Introduce failing test to verify CI (Taubakul Zhanibek)
+
+diff --git a/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java b/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
+index ab24630..580bae7 100644
+--- a/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
++++ b/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
+@@ -242,7 +242,7 @@ class StudentControllerTest {
+ 		mockMvc.perform(get("/api/info"))
+ 				.andExpect(status().isOk())
+ 				.andExpect(jsonPath("$.project").value("taubakul-zhanibek-student-api"))
+-				.andExpect(jsonPath("$.author").value("Taubakul Zhanibek Nurlanuly"))
++				.andExpect(jsonPath("$.author").value("Zhanibek Taubakul"))
+ 				// version must be the one from build.gradle (via build-info.properties)
+ 				.andExpect(jsonPath("$.version").value(buildProperties.getVersion()));
+ 	}
+
+## Build #1 — FAILURE
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/api/json?tree=displayName,result' | jq -c .
+{"_class":"org.jenkinsci.plugins.workflow.job.WorkflowRun","displayName":"#1 Taubakul Zhanibek","result":"FAILURE"}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/wfapi/describe' | jq -r '.stages[] | "\(.name): \(.status)"'
+Declarative: Tool Install: SUCCESS
+Checkout: SUCCESS
+Build: SUCCESS
+Test: FAILED
+Docker Build: FAILED
+Verify: FAILED
+Declarative: Post Actions: SUCCESS
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/testReport/api/json?tree=passCount,failCount' | jq -c .
+{"_class":"hudson.tasks.junit.TestResult","failCount":1,"passCount":21}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/testReport/api/json?tree=suites%5Bcases%5BclassName,name,status,errorDetails%5D%5D' | jq -r '.suites[].cases[] | select(.status=="FAILED" or .status=="REGRESSION") | "\(.className).\(.name): \(.status)\n  \(.errorDetails)"'
+kz.taubakul.studentapi.controller.StudentControllerTest.infoContainsAuthorName(): FAILED
+  java.lang.AssertionError: JSON path "$.author" expected:<Zhanibek Taubakul> but was:<Taubakul Zhanibek Nurlanuly>
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/consoleText' | grep -E 'Pipeline of|\[Pipeline\] \{ \(|gradlew test|FAILED|tests completed|AssertionError|BUILD FAILED|script returned exit code|Stage .* skipped|FAILURE:|Pipeline finished|Finished:' | cut -c1-190
+[Pipeline] { (Declarative: Tool Install)
+[Pipeline] { (Checkout)
+[2026-10-27T18:32:30.002Z] Pipeline of Taubakul Zhanibek Nurlanuly: branch test/taubakul-zhanibek-pipeline-failure, commit a259ca9621321114c72287f9f5e4b350e7edd37b
+[Pipeline] { (Build)
+[Pipeline] { (Test)
+[2026-10-27T18:32:35.277Z] + ./gradlew test --no-daemon
+[2026-10-27T18:32:39.884Z] StudentControllerTest > infoContainsAuthorName() FAILED
+[2026-10-27T18:32:39.884Z]     java.lang.AssertionError at StudentControllerTest.java:245
+[2026-10-27T18:32:40.176Z] > Task :test FAILED
+[2026-10-27T18:32:40.176Z] 22 tests completed, 1 failed
+[2026-10-27T18:32:40.176Z] FAILURE: Build failed with an exception.
+[2026-10-27T18:32:40.176Z] BUILD FAILED in 5s
+[Pipeline] { (Docker Build)
+Stage "Docker Build" skipped due to earlier failure(s)
+[Pipeline] { (Verify)
+Stage "Verify" skipped due to earlier failure(s)
+[Pipeline] { (Declarative: Post Actions)
+[2026-10-27T18:32:41.073Z] Pipeline finished for Taubakul Zhanibek Nurlanuly (result: FAILURE)
+[2026-10-27T18:32:41.166Z] FAILURE: build 1 of Taubakul Zhanibek Nurlanuly failed — see the failed stage above
+ERROR: script returned exit code 1
+Finished: FAILURE
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/consoleText' | tail -15 | cut -c1-190
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // timeout
+[Pipeline] }
+[Pipeline] // timestamps
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 1
+Finished: FAILURE
+
+$ for id in $(curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/wfapi/describe' | jq -r '.stages[] | select(.name=="Test" or .name=="Docker Build" or .name=="Verify") | .id'); do curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" "http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/1/execution/node/$id/wfapi/describe" | jq -r '"\(.name): status=\(.status), duration=\(.durationMillis)ms, steps executed=\(.stageFlowNodes|length) \([.stageFlowNodes[]?.name] | join(", "))"'; done
+Test: status=FAILED, duration=5902ms, steps executed=4 Use a tool from a predefined Tool Installation, Fetches the environment variables for a given tool in a list of 'FOO=bar' strings suitable for the withEnv step., Shell Script, Archive JUnit-formatted test results
+Docker Build: status=FAILED, duration=111ms, steps executed=1 Get contextual object from internal APIs
+Verify: status=FAILED, duration=88ms, steps executed=1 Get contextual object from internal APIs
+
+$ docker images taubakul-zhanibek-student-api --format '{{.Tag}}' | sort
+build-1
+build-2
+build-3
+v1.0-taubakul-zhanibek
+
+## Fix and build #2 — SUCCESS
+$ git log --oneline -2 test/taubakul-zhanibek-pipeline-failure
+38dc247 Fix expected author name in info test (Taubakul Zhanibek)
+a259ca9 Introduce failing test to verify CI (Taubakul Zhanibek)
+
+$ git diff a259ca9 38dc247
+diff --git a/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java b/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
+index 580bae7..ab24630 100644
+--- a/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
++++ b/src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
+@@ -242,7 +242,7 @@ class StudentControllerTest {
+ 		mockMvc.perform(get("/api/info"))
+ 				.andExpect(status().isOk())
+ 				.andExpect(jsonPath("$.project").value("taubakul-zhanibek-student-api"))
+-				.andExpect(jsonPath("$.author").value("Zhanibek Taubakul"))
++				.andExpect(jsonPath("$.author").value("Taubakul Zhanibek Nurlanuly"))
+ 				// version must be the one from build.gradle (via build-info.properties)
+ 				.andExpect(jsonPath("$.version").value(buildProperties.getVersion()));
+ 	}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/2/api/json?tree=displayName,result' | jq -c .
+{"_class":"org.jenkinsci.plugins.workflow.job.WorkflowRun","displayName":"#2 Taubakul Zhanibek","result":"SUCCESS"}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/2/wfapi/describe' | jq -r '.stages[] | "\(.name): \(.status)"'
+Declarative: Tool Install: SUCCESS
+Checkout: SUCCESS
+Build: SUCCESS
+Test: SUCCESS
+Docker Build: SUCCESS
+Verify: SUCCESS
+Declarative: Post Actions: SUCCESS
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/2/testReport/api/json?tree=passCount,failCount' | jq -c .
+{"_class":"hudson.tasks.junit.TestResult","failCount":0,"passCount":22}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/2/consoleText' | grep -E 'Pipeline of|tests completed|BUILD SUCCESSFUL|docker build|VERIFIED|SUCCESS:|Finished:' | cut -c1-170
+[2026-10-27T18:34:21.026Z] Pipeline of Taubakul Zhanibek Nurlanuly: branch test/taubakul-zhanibek-pipeline-failure, commit 38dc247d7141af63379dd0f8d5e13e802e8e4888
+[2026-10-27T18:34:25.861Z] BUILD SUCCESSFUL in 3s
+[2026-10-27T18:34:31.785Z] BUILD SUCCESSFUL in 5s
+[2026-10-27T18:34:32.433Z] + docker build -t taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek -t taubakul-zhanibek-student-api:build-2 .
+[2026-10-27T18:34:33.738Z] + echo 'Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek'
+[2026-10-27T18:34:33.738Z] Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek
+[2026-10-27T18:34:34.070Z] SUCCESS: build 2 of Taubakul Zhanibek Nurlanuly passed all stages
+Finished: SUCCESS
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/test%252Ftaubakul-zhanibek-pipeline-failure/api/json?tree=builds%5Bnumber,result,displayName%5D' | jq -r '.builds[] | "#\(.number) \(.result)"'
+#2 SUCCESS
+#1 FAILURE
+
+## Explanation
+- Error: in StudentControllerTest.infoContainsAuthorName the expected author was changed to
+  "Zhanibek Taubakul", while /api/info returns "Taubakul Zhanibek Nurlanuly" (commit a259ca9).
+- Where it is visible: Test stage console — `StudentControllerTest > infoContainsAuthorName() FAILED`,
+  `java.lang.AssertionError at StudentControllerTest.java:245`, `22 tests completed, 1 failed`,
+  `BUILD FAILED`, `ERROR: script returned exit code 1`; the JUnit report (published in post/always)
+  shows the exact message: JSON path "$.author" expected:<Zhanibek Taubakul> but was:<Taubakul Zhanibek
+  Nurlanuly>.
+- Effect: `./gradlew test` exited with code 1 -> the sh step failed -> the Test stage failed -> Jenkins
+  skipped "Docker Build" and "Verify" (console: "Stage ... skipped due to earlier failure(s)"; the stage
+  API reports them as FAILED but they contain no shell step) -> build #1 FAILURE, no image was built.
+- Fix: restored the correct expected value in a separate commit (38dc247), verified locally with
+  ./gradlew clean build, pushed; Jenkins picked up the commit and build #2 passed all stages (22/22).
+- The branch is not merged into main: it stays as proof; main was never broken.

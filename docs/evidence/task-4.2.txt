@@ -1,0 +1,211 @@
+# Task 4.2 — Personalized Jenkinsfile (Taubakul Zhanibek)
+
+$ cat Jenkinsfile
+// Jenkinsfile — CI pipeline of taubakul-zhanibek-student-api (author: Taubakul Zhanibek)
+// Declarative pipeline: Checkout -> Build -> Test -> Docker Build -> Verify.
+// If a stage fails, the build is marked FAILURE and the following stages are skipped.
+
+pipeline {
+    // Run on a node with the "docker" label (the built-in node has Docker access)
+    agent { label 'docker' }
+
+    // JDK 21 configured in Jenkins (jenkins/casc.yaml): sets JAVA_HOME and PATH
+    tools {
+        jdk 'jdk-21'
+    }
+
+    options {
+        timestamps()                                    // time for every console line
+        timeout(time: 30, unit: 'MINUTES')              // abort a hanging build
+        buildDiscarder(logRotator(numToKeepStr: '20'))  // keep the last 20 builds
+        disableConcurrentBuilds()                       // one build per branch at a time
+        skipDefaultCheckout(true)                       // the Checkout stage gets the code itself
+    }
+
+    environment {
+        STUDENT_NAME = 'Taubakul Zhanibek Nurlanuly'
+        IMAGE_NAME   = 'taubakul-zhanibek-student-api'
+        IMAGE_TAG    = 'v1.0-taubakul-zhanibek'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    currentBuild.displayName = "#${env.BUILD_NUMBER} Taubakul Zhanibek"
+                    // Get the source code of this branch from GitHub;
+                    // checkout returns the Git variables (commit, branch)
+                    def scmVars = checkout scm
+                    env.GIT_COMMIT = scmVars.GIT_COMMIT
+                }
+                echo "Pipeline of ${env.STUDENT_NAME}: branch ${env.BRANCH_NAME}, commit ${env.GIT_COMMIT}"
+                sh 'git log -1 --oneline'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // Compile and package the application without running tests
+                sh './gradlew clean assemble --no-daemon'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // A failing test makes this step exit with a non-zero code -> stage fails
+                sh './gradlew test --no-daemon'
+            }
+            post {
+                always {
+                    // Publish JUnit results even when tests fail
+                    junit 'build/test-results/test/*.xml'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                // Build the personalized image; the second tag identifies this build
+                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:build-${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                // Fails the build if the image does not exist
+                sh '''
+                    if docker image inspect "${IMAGE_NAME}:${IMAGE_TAG}" > /dev/null 2>&1; then
+                        docker image inspect "${IMAGE_NAME}:${IMAGE_TAG}" --format 'ID: {{.Id}}
+Created: {{.Created}}
+Size: {{.Size}} bytes
+Author label: {{index .Config.Labels "author"}}'
+                        echo "Image ${IMAGE_NAME}:${IMAGE_TAG} exists — VERIFIED by Taubakul Zhanibek"
+                    else
+                        echo "ERROR: image ${IMAGE_NAME}:${IMAGE_TAG} was not found"
+                        exit 1
+                    fi
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "SUCCESS: build ${env.BUILD_NUMBER} of ${env.STUDENT_NAME} passed all stages"
+        }
+        failure {
+            echo "FAILURE: build ${env.BUILD_NUMBER} of ${env.STUDENT_NAME} failed — see the failed stage above"
+        }
+        always {
+            echo "Pipeline finished for ${env.STUDENT_NAME} (result: ${currentBuild.currentResult})"
+            // Delete the workspace to save disk space
+            cleanWs()
+        }
+    }
+}
+
+$ ~/projects/jenkins-tools/jcli declarative-linter < Jenkinsfile
+Jenkinsfile successfully validated.
+
+$ git log --oneline main..feature/taubakul-zhanibek-jenkins
+19446dc Show checked out commit in Jenkins log
+dfd6c8e Use explicit Checkout stage only in Jenkinsfile (Taubakul Zhanibek)
+dda784e Add declarative Jenkinsfile for Taubakul Zhanibek Student API
+82c3ca4 Add Jenkins configuration as code for Taubakul Zhanibek CI
+
+## Build #3 of feature/taubakul-zhanibek-jenkins
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/feature%252Ftaubakul-zhanibek-jenkins/3/api/json?tree=displayName,result,duration' | jq -c .
+{"_class":"org.jenkinsci.plugins.workflow.job.WorkflowRun","displayName":"#3 Taubakul Zhanibek","duration":17683,"result":"SUCCESS"}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/feature%252Ftaubakul-zhanibek-jenkins/3/wfapi/describe' | jq -r '.stages[] | "\(.name): \(.status) (\(.durationMillis/1000|floor)s)"'
+Declarative: Tool Install: SUCCESS (0s)
+Checkout: SUCCESS (2s)
+Build: SUCCESS (4s)
+Test: SUCCESS (6s)
+Docker Build: SUCCESS (0s)
+Verify: SUCCESS (0s)
+Declarative: Post Actions: SUCCESS (0s)
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/feature%252Ftaubakul-zhanibek-jenkins/3/testReport/api/json?tree=passCount,failCount,skipCount' | jq -c .
+{"_class":"hudson.tasks.junit.TestResult","failCount":0,"passCount":22,"skipCount":0}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/feature%252Ftaubakul-zhanibek-jenkins/3/consoleText' | grep -E 'Started by|Obtained Jenkinsfile|\[Pipeline\] \{ \(|Pipeline of|^\[.*\] [0-9a-f]{7} |gradlew|BUILD SUCCESSFUL|tests completed|docker build|naming to|ID: |Created: |Size: |Author label|VERIFIED|SUCCESS:|Pipeline finished|Deleting project workspace|Finished:' | cut -c1-170
+Obtained Jenkinsfile from 19446dc9caad91b80aa67dd31851543b4fb4b26c
+[Pipeline] { (Declarative: Tool Install)
+[Pipeline] { (Checkout)
+[2026-10-27T18:28:26.486Z] Pipeline of Taubakul Zhanibek Nurlanuly: branch feature/taubakul-zhanibek-jenkins, commit 19446dc9caad91b80aa67dd31851543b4fb4b26c
+[2026-10-27T18:28:26.838Z] 19446dc Show checked out commit in Jenkins log
+[Pipeline] { (Build)
+[2026-10-27T18:28:27.469Z] + ./gradlew clean assemble --no-daemon
+[2026-10-27T18:28:31.335Z] BUILD SUCCESSFUL in 3s
+[Pipeline] { (Test)
+[2026-10-27T18:28:32.073Z] + ./gradlew test --no-daemon
+[2026-10-27T18:28:37.211Z] BUILD SUCCESSFUL in 5s
+[Pipeline] { (Docker Build)
+[2026-10-27T18:28:38.187Z] + docker build -t taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek -t taubakul-zhanibek-student-api:build-3 .
+[2026-10-27T18:28:38.439Z] #10 [build 3/7] COPY gradlew settings.gradle build.gradle ./
+[2026-10-27T18:28:38.439Z] #11 [build 5/7] RUN ./gradlew dependencies --no-daemon > /dev/null
+[2026-10-27T18:28:38.439Z] #15 [build 7/7] RUN ./gradlew bootJar --no-daemon
+[2026-10-27T18:28:38.439Z] #17 naming to docker.io/library/taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek done
+[2026-10-27T18:28:38.439Z] #17 naming to docker.io/library/taubakul-zhanibek-student-api:build-3 done
+[Pipeline] { (Verify)
+[2026-10-27T18:28:39.121Z] + docker image inspect taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek --format 'ID: {{.Id}}
+[2026-10-27T18:28:39.121Z] Created: {{.Created}}
+[2026-10-27T18:28:39.121Z] Size: {{.Size}} bytes
+[2026-10-27T18:28:39.121Z] Author label: {{index .Config.Labels "author"}}'
+[2026-10-27T18:28:39.121Z] ID: sha256:ea2f21b464bf1ab1761d4f1f245162a2ec95841d06dcbf2b48150499a325d10b
+[2026-10-27T18:28:39.121Z] Created: 2026-10-27T17:51:56.286077262Z
+[2026-10-27T18:28:39.121Z] Size: 580453574 bytes
+[2026-10-27T18:28:39.121Z] Author label: Taubakul Zhanibek
+[2026-10-27T18:28:39.121Z] + echo 'Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek'
+[2026-10-27T18:28:39.121Z] Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek
+[Pipeline] { (Declarative: Post Actions)
+[2026-10-27T18:28:39.366Z] Pipeline finished for Taubakul Zhanibek Nurlanuly (result: SUCCESS)
+[2026-10-27T18:28:39.402Z] [WS-CLEANUP] Deleting project workspace...
+[2026-10-27T18:28:39.467Z] SUCCESS: build 3 of Taubakul Zhanibek Nurlanuly passed all stages
+Finished: SUCCESS
+
+## Merge into main (--no-ff) and build #2 of main
+$ git log --oneline --graph -7 main
+*   c824aef Merge branch 'feature/taubakul-zhanibek-jenkins': Jenkins CI pipeline by Taubakul Zhanibek
+|\  
+| * 19446dc Show checked out commit in Jenkins log
+| * dfd6c8e Use explicit Checkout stage only in Jenkinsfile (Taubakul Zhanibek)
+| * dda784e Add declarative Jenkinsfile for Taubakul Zhanibek Student API
+| * 82c3ca4 Add Jenkins configuration as code for Taubakul Zhanibek CI
+|/  
+* 5aa2c97 Reword commit trailer checks in evidence and checklist
+*   333dc64 Merge branch 'feature/taubakul-zhanibek-docker': Docker and Compose setup by Taubakul Zhanibek
+|\  
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/2/api/json?tree=displayName,result' | jq -c .
+{"_class":"org.jenkinsci.plugins.workflow.job.WorkflowRun","displayName":"#2 Taubakul Zhanibek","result":"SUCCESS"}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/2/wfapi/describe' | jq -r '.stages[] | "\(.name): \(.status)"'
+Declarative: Tool Install: SUCCESS
+Checkout: SUCCESS
+Build: SUCCESS
+Test: SUCCESS
+Docker Build: SUCCESS
+Verify: SUCCESS
+Declarative: Post Actions: SUCCESS
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/2/testReport/api/json?tree=passCount,failCount' | jq -c .
+{"_class":"hudson.tasks.junit.TestResult","failCount":0,"passCount":22}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" 'http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/job/main/2/consoleText' | grep -E 'Pipeline of|VERIFIED|SUCCESS:|Finished:' | cut -c1-170
+[2026-10-27T18:30:23.041Z] Pipeline of Taubakul Zhanibek Nurlanuly: branch main, commit c824aefdfae29c68da8ed54988591f0f8615589c
+[2026-10-27T18:30:35.500Z] + echo 'Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek'
+[2026-10-27T18:30:35.500Z] Image taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek exists — VERIFIED by Taubakul Zhanibek
+[2026-10-27T18:30:35.834Z] SUCCESS: build 2 of Taubakul Zhanibek Nurlanuly passed all stages
+Finished: SUCCESS
+
+## Why the pipeline stops at a failed stage
+Every `sh` step returns the exit code of its command. `./gradlew test` exits with a non-zero code when a
+test fails, so the `sh` step throws an error, the Test stage is marked FAILED and the build result becomes
+FAILURE. In a Declarative pipeline the stages run in order; after an error the remaining stages are
+skipped ("Stage skipped due to earlier failure(s)") and only the `post` blocks run (junit is published in
+`post { always }` of the Test stage, then `failure` and `always` of the pipeline). So the image is never
+built from untested code. Demonstrated in task 4.3.
+Notes: Docker Build takes ~1 s because the sources did not change since the image was built in task 3.3,
+so every layer is taken from the cache. The image tag build-N is added on every build.

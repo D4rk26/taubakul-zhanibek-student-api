@@ -1,0 +1,198 @@
+# Task 4.1 — Jenkins setup from the terminal (Taubakul Zhanibek)
+(Secrets are never printed: the admin password and API token are read from files with chmod 600 outside the repository.)
+
+## Backup and installation
+$ ls -l ~/projects/jenkins-home-backup-2026-10-27.tar.gz
+-rw-------  1 zhanibek  staff  54456466 27 окт.  23:05 /Users/zhanibek/projects/jenkins-home-backup-2026-10-27.tar.gz
+
+$ brew services list | grep -E "Name|jenkins"
+Name        Status User     File
+jenkins-lts started         zhanibek ~/Library/LaunchAgents/sh.brew.jenkins-lts.plist
+
+$ brew list --versions jenkins-lts openjdk@21
+jenkins-lts 2.580.1
+openjdk@21 21.0.12.1
+
+$ cat jenkins/plugins.txt
+# Jenkins plugins for taubakul-zhanibek-student-api (Taubakul Zhanibek)
+# Installed with jenkins-plugin-manager; dependencies are resolved automatically,
+# versions are the latest compatible with the installed Jenkins LTS (--war).
+workflow-aggregator
+git
+github
+credentials
+credentials-binding
+plain-credentials
+configuration-as-code
+job-dsl
+pipeline-stage-view
+junit
+timestamper
+ws-cleanup
+branch-api
+workflow-multibranch
+pipeline-github-lib
+
+$ java -jar ~/projects/jenkins-tools/jenkins-plugin-manager.jar --version
+2.15.0
+
+$ grep -E "^(File containing|Plugin download location)" ~/projects/jenkins-tools/plugin-install.log; grep -c "Downloaded and validated" ~/projects/jenkins-tools/plugin-install.log; tail -1 ~/projects/jenkins-tools/plugin-install.log
+File containing list of plugins to be downloaded: jenkins/plugins.txt
+Plugin download location: /Users/zhanibek/.jenkins/plugins
+82
+Done
+
+$ ls ~/.jenkins/plugins/*.jpi | wc -l
+      82
+
+## Setup wizard disabled (install state files) and JCasC location
+$ cat ~/.jenkins/jenkins.install.InstallUtil.lastExecVersion; echo; cat ~/.jenkins/jenkins.install.UpgradeWizard.state; echo
+2.580.1
+2.580.1
+
+$ ls -l ~/.jenkins/jenkins.yaml
+lrwxr-xr-x  1 zhanibek  staff  72 27 окт.  23:20 /Users/zhanibek/.jenkins/jenkins.yaml -> /Users/zhanibek/projects/taubakul-zhanibek-student-api/jenkins/casc.yaml
+
+$ ls -l ~/projects/jenkins-admin-password.txt ~/projects/jenkins-api-token.txt
+-rw-------  1 zhanibek  staff  40 27 окт.  23:17 /Users/zhanibek/projects/jenkins-admin-password.txt
+-rw-------  1 zhanibek  staff  43 27 окт.  23:21 /Users/zhanibek/projects/jenkins-api-token.txt
+
+## Jenkins is up
+$ curl -s -o /dev/null -w "GET /login -> HTTP %{http_code}\n" http://127.0.0.1:8080/login
+GET /login -> HTTP 200
+
+$ curl -s -o /dev/null -w "GET /api/json anonymous -> HTTP %{http_code}\n" http://127.0.0.1:8080/api/json
+GET /api/json anonymous -> HTTP 403
+
+$ curl -s -o /dev/null -w "GET /api/json as zhanibek (API token) -> HTTP %{http_code}\n" -u "$(cat ~/projects/jenkins-api-token.txt)" http://127.0.0.1:8080/api/json
+GET /api/json as zhanibek (API token) -> HTTP 200
+
+$ curl -s -I http://127.0.0.1:8080/login | grep -i "^X-Jenkins:"
+X-Jenkins: 2.580.1
+
+$ echo "println jenkins.model.Jenkins.get().getInstallState()" | ~/projects/jenkins-tools/jcli groovy =
+InstallState (RESTART)
+
+## Logs: JCasC and errors (log records of the running Jenkins)
+$ echo 'jenkins.model.Jenkins.logRecords.reverse().findAll { it.loggerName?.contains("casc") || it.level.intValue() >= java.util.logging.Level.WARNING.intValue() }.each { println "${it.level} ${it.loggerName}: ${it.message?.take(160)}" }' | ~/projects/jenkins-tools/jcli groovy =
+WARNING hudson.model.User: entry for zhanibek in /Users/zhanibek/.jenkins/users/zhanibek_c4cdf80031302445c7898019782bfcbcf66113af7e9ad6165c673c814904fd06 duplicates one seen earlier for z
+WARNING hudson.cli.handlers.GenericItemOptionHandler: running as {0} could not find {1} of {2}
+
+Note on the warnings above: the "duplicates one seen earlier" warning was logged once at startup while
+JCasC created the user zhanibek (there is a single users/zhanibek_* directory); the CLI warning comes
+from a `jenkins-cli build` call on the multibranch folder (folders are scanned via REST instead).
+
+## jenkins-cli with the API token
+$ ~/projects/jenkins-tools/jcli who-am-i
+Authenticated as: zhanibek
+Authorities:
+  authenticated
+
+$ ~/projects/jenkins-tools/jcli list-jobs
+Taubakul_Zhanibek_Student_API
+
+$ ~/projects/jenkins-tools/jcli list-plugins | wc -l
+      82
+
+$ ~/projects/jenkins-tools/jcli list-plugins | grep -E "^(workflow-aggregator|configuration-as-code|job-dsl|git|github|credentials|pipeline-stage-view|junit|timestamper|ws-cleanup|workflow-multibranch|pipeline-github-lib) " | cut -c1-90
+configuration-as-code              Configuration as Code Plugin                2136.veb_3a
+credentials                        Credentials Plugin                          1514.vb_01e
+git                                Git plugin                                  5.11.0
+github                             GitHub plugin                               1.47.0
+job-dsl                            Job DSL                                     3732.v9a_c4
+junit                              JUnit Plugin                                1442.vb_b_a
+pipeline-github-lib                Pipeline: GitHub Groovy Libraries           65.v203688e
+pipeline-stage-view                Pipeline: Stage View Plugin                 2.41
+timestamper                        Timestamper                                 1.30
+workflow-aggregator                Pipeline                                    608.v67378e
+workflow-multibranch               Pipeline: Multibranch                       842.v3a_b_5
+ws-cleanup                         Workspace Cleanup Plugin                    0.49
+
+## Configuration applied by JCasC
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" "http://127.0.0.1:8080/api/json?tree=description,mode,numExecutors" | jq -c .
+{"_class":"hudson.model.Hudson","mode":"NORMAL","numExecutors":2,"description":"Jenkins of Taubakul Zhanibek — DevOps midterm"}
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" "http://127.0.0.1:8080/computer/(built-in)/api/json?tree=numExecutors,assignedLabels%5Bname%5D" | jq -c .
+{"_class":"hudson.model.Hudson$MasterComputer","assignedLabels":[{"name":"built-in"},{"name":"docker"}],"numExecutors":2}
+
+$ echo 'def j = jenkins.model.Jenkins.get()
+println "Security realm: " + j.securityRealm.class.simpleName + ", users: " + j.securityRealm.allUsers*.id
+println "Authorization: " + j.authorizationStrategy.class.simpleName
+j.getDescriptorByType(hudson.model.JDK.DescriptorImpl).installations.each { println "JDK tool: ${it.name} -> ${it.home}" }
+j.globalNodeProperties.each { p -> p.envVars.each { k, v -> println "Global env: ${k}=${v}" } }' | ~/projects/jenkins-tools/jcli groovy =
+Security realm: HudsonPrivateSecurityRealm, users: [admin, zhanibek]
+Authorization: FullControlOnceLoggedInAuthorizationStrategy
+JDK tool: jdk-21 -> /opt/homebrew/opt/openjdk@21
+Global env: PATH+EXTRA=/opt/homebrew/bin:/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin
+
+$ ~/projects/jenkins-tools/jcli list-credentials system::system::jenkins
+========================================================================================
+Domain           (global)
+Description      
+# of Credentials 1
+========================================================================================
+Id               Name
+================ =======================================================================
+github-token     D4rk26/****** (GitHub token of D4rk26 (Taubakul Zhanibek) for checkout)
+========================================================================================
+
+
+The credential value is never shown: Jenkins prints only the ID and a masked username.
+Note: the repository is public, so `git ls-remote`/checkout works even without credentials (the first
+indexing ran before the credential existed and succeeded anonymously). With credentials, the same job
+also works for a private repository: git authenticates with the token via GIT_ASKPASS.
+
+## Multibranch job and checkout
+$ ~/projects/jenkins-tools/jcli get-job Taubakul_Zhanibek_Student_API | grep -E "<remote>|<credentialsId>|<scriptPath>|<spec>|<interval>|jenkins.plugins.git.traits.BranchDiscoveryTrait|<displayName>"
+  <displayName>Taubakul_Zhanibek_Student_API</displayName>
+      <spec>* * * * *</spec>
+      <interval>120000</interval>
+          <remote>https://github.com/D4rk26/taubakul-zhanibek-student-api.git</remote>
+          <credentialsId>github-token</credentialsId>
+            <jenkins.plugins.git.traits.BranchDiscoveryTrait/>
+    <scriptPath>Jenkinsfile</scriptPath>
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/indexing/consoleText | grep -E "Started|credentials|git ls-remote|Checking branch|Jenkinsfile. found|Processed|Finished" | cut -c1-170
+Started by user Taubakul Zhanibek
+using GIT_ASKPASS to set credentials GitHub token of D4rk26 (Taubakul Zhanibek) for checkout
+ > git ls-remote --symref -- https://github.com/D4rk26/taubakul-zhanibek-student-api.git # timeout=10
+using GIT_ASKPASS to set credentials GitHub token of D4rk26 (Taubakul Zhanibek) for checkout
+ > git ls-remote -h -- https://github.com/D4rk26/taubakul-zhanibek-student-api.git # timeout=10
+using GIT_ASKPASS to set credentials GitHub token of D4rk26 (Taubakul Zhanibek) for checkout
+Checking branches...
+  Checking branch feature/taubakul-zhanibek-crud
+      ‘Jenkinsfile’ found
+  Checking branch feature/taubakul-zhanibek-documentation
+      ‘Jenkinsfile’ found
+  Checking branch main
+      ‘Jenkinsfile’ found
+  Checking branch feature/taubakul-zhanibek-docker
+      ‘Jenkinsfile’ found
+Processed 4 branches
+[вт окт. 27 23:22:00 ALMT 2026] Finished branch indexing. Indexing took 3 секунды
+Finished: SUCCESS
+
+$ curl -s -u "$(cat ~/projects/jenkins-api-token.txt)" "http://127.0.0.1:8080/job/Taubakul_Zhanibek_Student_API/api/json?tree=jobs%5Bname,lastBuild%5Bnumber,result%5D%5D" | jq -r ".jobs[] | \"\(.name): #\(.lastBuild.number) \(.lastBuild.result)\""
+feature%2Ftaubakul-zhanibek-crud: #1 SUCCESS
+feature%2Ftaubakul-zhanibek-docker: #1 SUCCESS
+feature%2Ftaubakul-zhanibek-documentation: #1 SUCCESS
+main: #1 SUCCESS
+
+## Notes: decisions
+- Builds #1 above are SUCCESS with an empty pipeline: until this stage the Jenkinsfile in every branch
+  was the empty placeholder from task 1.1. They prove that Jenkins checks out every branch.
+- Setup wizard: disabled with the install state files in JENKINS_HOME (the same method the official
+  Jenkins Docker image uses): jenkins.install.InstallUtil.lastExecVersion and
+  jenkins.install.UpgradeWizard.state contain the WAR version 2.580.1, so Jenkins treats the initial
+  setup as completed (InstallState RESTART, no wizard). The flag -Djenkins.install.runSetupWizard=false
+  would need extra JVM options, but the brew service runs a fixed command and regenerates its plist.
+- JCasC location: the brew service cannot pass CASC_JENKINS_CONFIG, so the plugin's default location
+  $JENKINS_HOME/jenkins.yaml is used; it is a symlink to jenkins/casc.yaml in the repository.
+- Admin password: casc.yaml contains only ${readFile:/Users/zhanibek/projects/jenkins-admin-password.txt};
+  the file is outside the repository, chmod 600.
+- GitHub credential: kept out of casc.yaml (casc.yaml is re-applied at every start; without the token it
+  would reset the password to ""). It is applied once with jenkins/credentials.template.yaml:
+  `gh auth token | (replace __GITHUB_TOKEN__) | jenkins-cli apply-configuration` — the token goes through
+  pipes only, it is never written to a file, and Jenkins stores it encrypted in credentials.xml.
+- API token for jenkins-cli/REST: generated via REST (generateNewToken), stored as "zhanibek:<token>" in
+  ~/projects/jenkins-api-token.txt (chmod 600) and used as `-auth @file`.
