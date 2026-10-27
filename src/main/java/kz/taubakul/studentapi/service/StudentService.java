@@ -51,6 +51,23 @@ public class StudentService {
 	}
 
 	@Transactional
+	public StudentResponse update(Long id, StudentRequest request) {
+		Student student = getStudent(id);
+		String email = normalizeEmail(request.email());
+		// The student may keep their own email; it only has to be free among the other students
+		if (repository.existsByEmailIgnoreCaseAndIdNot(email, id)) {
+			throw new DuplicateEmailException(email);
+		}
+		student.setFirstName(request.firstName().trim());
+		student.setLastName(request.lastName().trim());
+		student.setEmail(email);
+		student.setGroupName(request.groupName().trim());
+		student.setCourse(request.course());
+		// saveAndFlush writes the change now, so a unique-constraint error is reported as 409 here
+		return StudentResponse.from(repository.saveAndFlush(student));
+	}
+
+	@Transactional
 	public void delete(Long id) {
 		repository.delete(getStudent(id));
 	}
