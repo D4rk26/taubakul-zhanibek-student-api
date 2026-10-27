@@ -2,7 +2,7 @@
 
 Author: Taubakul Zhanibek
 
-Student API by Taubakul Zhanibek — DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+Student API by Taubakul Zhanibek — a REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL; DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
 
 ## Tech stack
 
