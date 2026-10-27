@@ -1,0 +1,163 @@
+# Task 2.3 — Conflict resolution (Taubakul Zhanibek)
+
+$ sed -n 5p README.md
+Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
+
+$ git checkout -b feature/taubakul-zhanibek-documentation
+Switched to a new branch 'feature/taubakul-zhanibek-documentation'
+
+$ git diff
+diff --git a/README.md b/README.md
+index 7e9a4c8..f19a06e 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+ 
+ Author: Taubakul Zhanibek
+ 
+-Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
++REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL.
+ 
+ ## Tech stack
+ 
+
+$ git commit -q -am "Clarify project description in README" && git log --oneline -1
+ac106bc Clarify project description in README
+
+$ git checkout main
+Switched to branch 'main'
+
+$ git diff
+diff --git a/README.md b/README.md
+index 7e9a4c8..07f7fe3 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+ 
+ Author: Taubakul Zhanibek
+ 
+-Spring Boot CRUD "Student API" with PostgreSQL — DevOps midterm project (Linux, Git, Docker, Jenkins).
++Student API by Taubakul Zhanibek — DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+ 
+ ## Tech stack
+ 
+
+$ git commit -q -am "Mention author and DevOps toolchain in README description" && git log --oneline -1
+22f8d06 Mention author and DevOps toolchain in README description
+
+$ git log --oneline --graph --decorate --all -4
+* ac106bc (feature/taubakul-zhanibek-documentation) Clarify project description in README
+| * 22f8d06 (HEAD -> main) Mention author and DevOps toolchain in README description
+|/  
+*   967e8c2 Merge branch 'feature/taubakul-zhanibek-crud': add student update (PUT)
+|\  
+| * 2d6c64a (feature/taubakul-zhanibek-crud) Document PUT endpoint and changelog in README
+
+$ git merge feature/taubakul-zhanibek-documentation
+Auto-merging README.md
+CONFLICT (content): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.
+
+$ git status
+On branch main
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
+	both modified:   README.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+$ sed -n "1,12p" README.md
+# taubakul-zhanibek-student-api
+
+Author: Taubakul Zhanibek
+
+<<<<<<< HEAD
+Student API by Taubakul Zhanibek — DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+=======
+REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL.
+>>>>>>> feature/taubakul-zhanibek-documentation
+
+## Tech stack
+
+
+$ git diff
+diff --cc README.md
+index 07f7fe3,f19a06e..0000000
+--- a/README.md
++++ b/README.md
+@@@ -2,7 -2,7 +2,11 @@@
+  
+  Author: Taubakul Zhanibek
+  
+++<<<<<<< HEAD
+ +Student API by Taubakul Zhanibek — DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+++=======
++ REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL.
+++>>>>>>> feature/taubakul-zhanibek-documentation
+  
+  ## Tech stack
+  
+
+## Resolution (edited README.md by hand: one line that keeps the meaning of both versions)
+
+$ sed -n "1,8p" README.md
+# taubakul-zhanibek-student-api
+
+Author: Taubakul Zhanibek
+
+Student API by Taubakul Zhanibek — a REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL; DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+
+## Tech stack
+
+
+$ grep -n '<<<<<<<\|=======\|>>>>>>>' README.md || echo 'no conflict markers left'
+no conflict markers left
+
+$ git diff
+diff --cc README.md
+index 07f7fe3,f19a06e..0000000
+--- a/README.md
++++ b/README.md
+@@@ -2,7 -2,7 +2,7 @@@
+  
+  Author: Taubakul Zhanibek
+  
+- Student API by Taubakul Zhanibek — DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+ -REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL.
+++Student API by Taubakul Zhanibek — a REST API for managing students (create, read, update, delete) built with Spring Boot and PostgreSQL; DevOps midterm project: Linux, Git, Docker Compose and Jenkins CI.
+  
+  ## Tech stack
+  
+
+$ git add README.md
+
+$ git status
+On branch main
+All conflicts fixed but you are still merging.
+  (use "git commit" to conclude merge)
+
+Changes to be committed:
+	modified:   README.md
+
+
+$ git commit -q -m "Merge branch 'feature/taubakul-zhanibek-documentation', resolve README description conflict" && git log --oneline -1
+6e5411b Merge branch 'feature/taubakul-zhanibek-documentation', resolve README description conflict
+
+$ git log --oneline --graph --decorate --all
+*   6e5411b (HEAD -> main) Merge branch 'feature/taubakul-zhanibek-documentation', resolve README description conflict
+|\  
+| * ac106bc (feature/taubakul-zhanibek-documentation) Clarify project description in README
+* | 22f8d06 Mention author and DevOps toolchain in README description
+|/  
+*   967e8c2 Merge branch 'feature/taubakul-zhanibek-crud': add student update (PUT)
+|\  
+| * 2d6c64a (feature/taubakul-zhanibek-crud) Document PUT endpoint and changelog in README
+| * a7c4d6f Add tests for student update endpoint
+| * e4817ce Add update operation to student service and controller
+|/  
+* 765d258 Initial commit: Taubakul Zhanibek Student API
+

@@ -1,0 +1,106 @@
+# Task 2.4 — Remote repository (Taubakul Zhanibek)
+
+$ git ls-remote https://github.com/D4rk26/taubakul-zhanibek-student-api.git; echo "remote refs before push: $(git ls-remote https://github.com/D4rk26/taubakul-zhanibek-student-api.git | wc -l | tr -d " ")"
+remote refs before push: 0
+
+$ git remote add origin https://github.com/D4rk26/taubakul-zhanibek-student-api.git
+
+$ git remote -v
+origin	https://github.com/D4rk26/taubakul-zhanibek-student-api.git (fetch)
+origin	https://github.com/D4rk26/taubakul-zhanibek-student-api.git (push)
+
+$ GIT_TERMINAL_PROMPT=0 git push -u origin main 2>&1
+To https://github.com/D4rk26/taubakul-zhanibek-student-api.git
+ * [new branch]      main -> main
+branch 'main' set up to track 'origin/main'.
+
+$ GIT_TERMINAL_PROMPT=0 git push -u origin feature/taubakul-zhanibek-crud 2>&1
+remote: 
+remote: Create a pull request for 'feature/taubakul-zhanibek-crud' on GitHub by visiting:        
+remote:      https://github.com/D4rk26/taubakul-zhanibek-student-api/pull/new/feature/taubakul-zhanibek-crud        
+remote: 
+To https://github.com/D4rk26/taubakul-zhanibek-student-api.git
+ * [new branch]      feature/taubakul-zhanibek-crud -> feature/taubakul-zhanibek-crud
+branch 'feature/taubakul-zhanibek-crud' set up to track 'origin/feature/taubakul-zhanibek-crud'.
+
+$ GIT_TERMINAL_PROMPT=0 git push -u origin feature/taubakul-zhanibek-documentation 2>&1
+remote: 
+remote: Create a pull request for 'feature/taubakul-zhanibek-documentation' on GitHub by visiting:        
+remote:      https://github.com/D4rk26/taubakul-zhanibek-student-api/pull/new/feature/taubakul-zhanibek-documentation        
+remote: 
+To https://github.com/D4rk26/taubakul-zhanibek-student-api.git
+ * [new branch]      feature/taubakul-zhanibek-documentation -> feature/taubakul-zhanibek-documentation
+branch 'feature/taubakul-zhanibek-documentation' set up to track 'origin/feature/taubakul-zhanibek-documentation'.
+
+$ git ls-remote --heads origin
+2d6c64a1e15a2f3909e5a739ae937cc91190da7d	refs/heads/feature/taubakul-zhanibek-crud
+ac106bcecb6143601c9e51d7add1efc9c941b6b0	refs/heads/feature/taubakul-zhanibek-documentation
+6e5411b12cb3013cb4fa9cbba9a16231a3acc831	refs/heads/main
+
+$ git branch -a
+  feature/taubakul-zhanibek-crud
+  feature/taubakul-zhanibek-documentation
+* main
+  remotes/origin/feature/taubakul-zhanibek-crud
+  remotes/origin/feature/taubakul-zhanibek-documentation
+  remotes/origin/main
+
+$ git status -sb | head -1
+## main...origin/main
+
+$ gh api repos/D4rk26/taubakul-zhanibek-student-api/commits --paginate --jq ".[] | \"\(.sha[0:7]) author.login=\(.author.login) committer.login=\(.committer.login) | \(.commit.message | split(\"\n\")[0])\""
+6e5411b author.login=D4rk26 committer.login=D4rk26 | Merge branch 'feature/taubakul-zhanibek-documentation', resolve README description conflict
+22f8d06 author.login=D4rk26 committer.login=D4rk26 | Mention author and DevOps toolchain in README description
+ac106bc author.login=D4rk26 committer.login=D4rk26 | Clarify project description in README
+967e8c2 author.login=D4rk26 committer.login=D4rk26 | Merge branch 'feature/taubakul-zhanibek-crud': add student update (PUT)
+2d6c64a author.login=D4rk26 committer.login=D4rk26 | Document PUT endpoint and changelog in README
+a7c4d6f author.login=D4rk26 committer.login=D4rk26 | Add tests for student update endpoint
+e4817ce author.login=D4rk26 committer.login=D4rk26 | Add update operation to student service and controller
+765d258 author.login=D4rk26 committer.login=D4rk26 | Initial commit: Taubakul Zhanibek Student API
+
+$ git log --all --format="%h %an <%ae> | committer: %cn <%ce>"
+6e5411b Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+ac106bc Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+22f8d06 Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+2d6c64a Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+967e8c2 Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+a7c4d6f Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+e4817ce Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+765d258 Taubakul Zhanibek <taubakulzhanibek@gmail.com> | committer: Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+
+$ git log --all --format='%an <%ae>%n%B' | grep -iE 'co-authored|cl[a]ude|anthr[o]pic|generated' || echo 'no Co-Authored-By / AI mentions in any commit'
+no Co-Authored-By / AI mentions in any commit
+
+$ git grep -n -iE 'co-authored|cl[a]ude|anthr[o]pic|generated with' $(git rev-list --all) -- . ':!docs/evidence' | head || echo 'no AI mentions in tracked files of any commit'
+
+$ gh repo edit D4rk26/taubakul-zhanibek-student-api --description "Student CRUD API (Spring Boot, PostgreSQL) — DevOps midterm, Taubakul Zhanibek"
+
+$ gh repo view D4rk26/taubakul-zhanibek-student-api --json name,description,visibility,defaultBranchRef,url --jq "\"name: \(.name)\ndescription: \(.description)\nvisibility: \(.visibility)\ndefault branch: \(.defaultBranchRef.name)\nurl: \(.url)\""
+name: taubakul-zhanibek-student-api
+description: Student CRUD API (Spring Boot, PostgreSQL) — DevOps midterm, Taubakul Zhanibek
+visibility: PUBLIC
+default branch: main
+url: https://github.com/D4rk26/taubakul-zhanibek-student-api
+
+$ gh api repos/D4rk26/taubakul-zhanibek-student-api/branches --jq ".[].name"
+feature/taubakul-zhanibek-crud
+feature/taubakul-zhanibek-documentation
+main
+
+## Tag v1.0-taubakul-zhanibek — planned for stage 6
+The tag is intentionally not created yet. It will be put on the final commit in stage 6, so that
+version v1.0 includes the Dockerfile, docker-compose.yml and Jenkinsfile and matches the Docker
+image tag taubakul-zhanibek-student-api:v1.0-taubakul-zhanibek.
+
+## Why .env files, passwords and database credentials must not be committed
+- Git history keeps everything forever: deleting the file in a later commit does not remove it
+  from older commits; anyone with a clone can run `git log -p` and read it.
+- This repository is public: every person on the internet can read every commit.
+- Bots scan GitHub for leaked secrets within minutes of a push and use them automatically.
+- Credentials differ per environment (laptop, Docker, server) and must be changeable without
+  changing the code.
+The correct way: the code reads environment variables (DB_USERNAME, DB_PASSWORD in application.yml,
+no default password); real values live in a local .env file which is in .gitignore; the repository
+contains only .env.example with placeholders; Jenkins gets secrets from Jenkins Credentials.
+If a secret was leaked: rotate it immediately (change the password / revoke the token) — removing the
+file or rewriting history afterwards is not enough, because the secret may already be copied.

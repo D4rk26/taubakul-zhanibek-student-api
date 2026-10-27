@@ -1,0 +1,159 @@
+# Task 2.1 — Repository initialization (Taubakul Zhanibek)
+
+$ git init -b main
+Initialized empty Git repository in /Users/zhanibek/Projects/taubakul-zhanibek-student-api/.git/
+
+$ git config --global user.name "Taubakul Zhanibek"
+
+$ git config --global user.email "taubakulzhanibek@gmail.com"
+
+$ git config --global --list | grep user
+user.name=Taubakul Zhanibek
+user.email=taubakulzhanibek@gmail.com
+
+$ cat .gitignore
+# --- Gradle build output ---
+build/
+.gradle/
+out/
+
+# --- IDE settings ---
+.idea/
+*.iml
+.vscode/
+
+# --- OS files ---
+.DS_Store
+
+# --- Secrets: real environment files are never committed ---
+.env
+*.env
+# template with placeholders only
+!.env.example
+
+# --- Logs ---
+*.log
+# Part 1 results are kept in the repository as evidence
+!logs/Taubakul_Zhanibek_system_report.log
+
+$ cat .gitattributes
+# Unix scripts must keep LF line endings, otherwise they fail on Linux (Docker, Jenkins)
+gradlew   text eol=lf
+*.sh      text eol=lf
+
+# Windows scripts use CRLF
+*.bat     text eol=crlf
+
+# Binary files
+*.jar     binary
+
+$ git check-ignore -v build/ .gradle/ .env logs/other.log .DS_Store
+.gitignore:2:build/	build/
+.gitignore:3:.gradle/	.gradle/
+.gitignore:16:*.env	.env
+.gitignore:21:*.log	logs/other.log
+.gitignore:12:.DS_Store	.DS_Store
+
+$ git check-ignore -v .env.example logs/Taubakul_Zhanibek_system_report.log logs/Taubakul_Zhanibek_log_analysis.txt || echo "(not ignored — will be committed)"
+.gitignore:18:!.env.example	.env.example
+.gitignore:23:!logs/Taubakul_Zhanibek_system_report.log	logs/Taubakul_Zhanibek_system_report.log
+
+$ git status
+On branch main
+
+No commits yet
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.env.example
+	.gitattributes
+	.gitignore
+	Dockerfile
+	Jenkinsfile
+	README.md
+	backups/
+	build.gradle
+	docker-compose.yml
+	docs/
+	gradle/
+	gradlew
+	gradlew.bat
+	logs/
+	scripts/
+	settings.gradle
+	src/
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+$ git add .
+
+$ git status --short
+A  .env.example
+A  .gitattributes
+A  .gitignore
+A  Dockerfile
+A  Jenkinsfile
+A  README.md
+A  backups/README_Taubakul_Zhanibek_backup.md
+A  build.gradle
+A  docker-compose.yml
+A  docs/CHECKLIST.md
+A  docs/evidence/stage-2-app.txt
+A  docs/evidence/task-1.1.txt
+A  docs/evidence/task-1.2.txt
+A  docs/evidence/task-1.3.txt
+A  docs/evidence/task-1.4.txt
+A  gradle/wrapper/gradle-wrapper.jar
+A  gradle/wrapper/gradle-wrapper.properties
+A  gradlew
+A  gradlew.bat
+A  logs/Taubakul_Zhanibek_log_analysis.txt
+A  logs/Taubakul_Zhanibek_system_report.log
+A  scripts/Taubakul_Zhanibek_system_report.sh
+A  settings.gradle
+A  src/main/java/kz/taubakul/studentapi/TaubakulZhanibekStudentApiApplication.java
+A  src/main/java/kz/taubakul/studentapi/config/DataInitializer.java
+A  src/main/java/kz/taubakul/studentapi/controller/InfoController.java
+A  src/main/java/kz/taubakul/studentapi/controller/StudentController.java
+A  src/main/java/kz/taubakul/studentapi/dto/ApiError.java
+A  src/main/java/kz/taubakul/studentapi/dto/StudentRequest.java
+A  src/main/java/kz/taubakul/studentapi/dto/StudentResponse.java
+A  src/main/java/kz/taubakul/studentapi/entity/Student.java
+A  src/main/java/kz/taubakul/studentapi/exception/DuplicateEmailException.java
+A  src/main/java/kz/taubakul/studentapi/exception/GlobalExceptionHandler.java
+A  src/main/java/kz/taubakul/studentapi/exception/StudentNotFoundException.java
+A  src/main/java/kz/taubakul/studentapi/repository/StudentRepository.java
+A  src/main/java/kz/taubakul/studentapi/service/StudentService.java
+A  src/main/resources/application.yml
+A  src/test/java/kz/taubakul/studentapi/TaubakulZhanibekStudentApiApplicationTests.java
+A  src/test/java/kz/taubakul/studentapi/controller/StudentControllerTest.java
+A  src/test/java/kz/taubakul/studentapi/service/StudentServiceTest.java
+A  src/test/resources/application-test.yml
+
+$ git diff --cached --name-only | grep -E "^(build|\.gradle)/|(^|/)\.env$|\.DS_Store" || echo "nothing unwanted staged"
+nothing unwanted staged
+
+$ git ls-files --eol gradlew gradlew.bat scripts/Taubakul_Zhanibek_system_report.sh
+i/lf    w/lf    attr/text eol=lf      	gradlew
+i/lf    w/crlf  attr/text eol=crlf    	gradlew.bat
+i/lf    w/lf    attr/text eol=lf      	scripts/Taubakul_Zhanibek_system_report.sh
+
+$ git ls-files -s gradlew scripts/Taubakul_Zhanibek_system_report.sh
+100755 249efbb032ce46a80c687c0723eb172e85f6a136 0	gradlew
+100755 605d19ab37a26417719dcb1dad8b604bb1db295e 0	scripts/Taubakul_Zhanibek_system_report.sh
+
+$ git commit -q -m "Initial commit: Taubakul Zhanibek Student API" && git log --format="%h %an <%ae>%n    %s" -1
+765d258 Taubakul Zhanibek <taubakulzhanibek@gmail.com>
+    Initial commit: Taubakul Zhanibek Student API
+
+$ git show --stat --format="%H%nAuthor: %an <%ae>%nDate:   %ad%n%n    %B" HEAD | tail -5
+ ...TaubakulZhanibekStudentApiApplicationTests.java |  15 ++
+ .../controller/StudentControllerTest.java          | 187 ++++++++++++++++
+ .../studentapi/service/StudentServiceTest.java     |  70 ++++++
+ src/test/resources/application-test.yml            |   9 +
+ 41 files changed, 2342 insertions(+)
+
+$ git status
+On branch main
+nothing to commit, working tree clean
+

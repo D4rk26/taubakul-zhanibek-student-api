@@ -1,0 +1,90 @@
+# Task 2.2 — Branching and feature development (Taubakul Zhanibek)
+
+$ git checkout -b feature/taubakul-zhanibek-crud
+Switched to a new branch 'feature/taubakul-zhanibek-crud'
+
+$ git branch
+* feature/taubakul-zhanibek-crud
+  main
+
+$ git diff --stat
+ .../studentapi/controller/StudentController.java        |  6 ++++++
+ .../studentapi/repository/StudentRepository.java        |  3 +++
+ .../kz/taubakul/studentapi/service/StudentService.java  | 17 +++++++++++++++++
+ 3 files changed, 26 insertions(+)
+
+$ ./gradlew clean build --console=plain 2>&1 | grep -E "tests completed|FAILED|BUILD"
+BUILD SUCCESSFUL in 3s
+
+$ git add src/main && git commit -q -m "Add update operation to student service and controller" && git log --oneline -1
+e4817ce Add update operation to student service and controller
+
+$ ./gradlew clean build --console=plain 2>&1 | grep -E "update|FAILED|BUILD"
+StudentControllerTest > updateStudentCanKeepOwnEmail() PASSED
+StudentControllerTest > updateWithInvalidDataReturns400() PASSED
+StudentControllerTest > updateWithEmailOfAnotherStudentReturns409() PASSED
+StudentControllerTest > updateMissingStudentReturns404() PASSED
+StudentControllerTest > updateStudentReturns200WithNewData() PASSED
+StudentServiceTest > updateRejectsEmailOfAnotherStudent() PASSED
+BUILD SUCCESSFUL in 3s
+
+$ grep -h -o "testsuite name=\"[^\"]*\" tests=\"[0-9]*\" skipped=\"[0-9]*\" failures=\"[0-9]*\" errors=\"[0-9]*\"" build/test-results/test/*.xml
+testsuite name="kz.taubakul.studentapi.controller.StudentControllerTest" tests="17" skipped="0" failures="0" errors="0"
+testsuite name="kz.taubakul.studentapi.TaubakulZhanibekStudentApiApplicationTests" tests="1" skipped="0" failures="0" errors="0"
+testsuite name="kz.taubakul.studentapi.service.StudentServiceTest" tests="4" skipped="0" failures="0" errors="0"
+
+$ git add src/test && git commit -q -m "Add tests for student update endpoint" && git log --oneline -1
+a7c4d6f Add tests for student update endpoint
+
+$ git add README.md && git commit -q -m "Document PUT endpoint and changelog in README" && git log --oneline -1
+2d6c64a Document PUT endpoint and changelog in README
+
+$ git log --oneline main..feature/taubakul-zhanibek-crud
+2d6c64a Document PUT endpoint and changelog in README
+a7c4d6f Add tests for student update endpoint
+e4817ce Add update operation to student service and controller
+
+$ git checkout main
+Switched to branch 'main'
+
+$ git merge-base --is-ancestor main feature/taubakul-zhanibek-crud && echo "main is an ancestor of the feature branch -> a plain git merge would fast-forward (no merge commit)"
+main is an ancestor of the feature branch -> a plain git merge would fast-forward (no merge commit)
+
+$ git merge --no-ff feature/taubakul-zhanibek-crud -m "Merge branch 'feature/taubakul-zhanibek-crud': add student update (PUT)"
+Merge made by the 'ort' strategy.
+ README.md                                          | 11 ++-
+ .../studentapi/controller/StudentController.java   |  6 ++
+ .../studentapi/repository/StudentRepository.java   |  3 +
+ .../studentapi/service/StudentService.java         | 17 +++++
+ .../controller/StudentControllerTest.java          | 78 ++++++++++++++++++++++
+ .../studentapi/service/StudentServiceTest.java     | 13 ++++
+ 6 files changed, 127 insertions(+), 1 deletion(-)
+
+$ git log --oneline --graph --decorate -6
+*   967e8c2 (HEAD -> main) Merge branch 'feature/taubakul-zhanibek-crud': add student update (PUT)
+|\  
+| * 2d6c64a (feature/taubakul-zhanibek-crud) Document PUT endpoint and changelog in README
+| * a7c4d6f Add tests for student update endpoint
+| * e4817ce Add update operation to student service and controller
+|/  
+* 765d258 Initial commit: Taubakul Zhanibek Student API
+
+$ ./gradlew clean build --console=plain 2>&1 | grep -E "FAILED|BUILD"
+BUILD SUCCESSFUL in 3s
+
+$ grep -h -o "testsuite name=\"[^\"]*\" tests=\"[0-9]*\" skipped=\"[0-9]*\" failures=\"[0-9]*\" errors=\"[0-9]*\"" build/test-results/test/*.xml
+testsuite name="kz.taubakul.studentapi.controller.StudentControllerTest" tests="17" skipped="0" failures="0" errors="0"
+testsuite name="kz.taubakul.studentapi.service.StudentServiceTest" tests="4" skipped="0" failures="0" errors="0"
+testsuite name="kz.taubakul.studentapi.TaubakulZhanibekStudentApiApplicationTests" tests="1" skipped="0" failures="0" errors="0"
+
+$ git status --short && echo "working tree clean"
+working tree clean
+
+## Explanation: fast-forward vs --no-ff
+main had no new commits since the feature branch was created (main is an ancestor of the branch),
+so a plain `git merge` would do a fast-forward: Git just moves the main pointer forward to the last
+feature commit. History stays linear and there is no trace that the work was done on a branch.
+`git merge --no-ff` always creates a separate merge commit (967e8c2) with two parents. The graph
+shows the branch and its 3 commits as one unit of work, and the whole feature can be reverted with
+one `git revert -m 1 <merge-commit>`.
+After the merge, `./gradlew clean build` on main passed again: 22 tests, 0 failures.
